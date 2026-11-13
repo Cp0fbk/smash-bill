@@ -1,0 +1,258 @@
+// ============================================================================
+// SmashBill - Prisma Schema
+// Domain: Badminton Club Attendance, Cost Splitting, VietQR Billing & Community
+// ============================================================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ----------------------------------------------------------------------------
+// Enums
+// ----------------------------------------------------------------------------
+
+enum AuthProvider {
+  GOOGLE
+  ZALO
+}
+
+enum AccountStatus {
+  ACTIVE
+  SHADOWBANNED
+  BANNED
+}
+
+enum ClubRole {
+  ADMIN
+  MEMBER
+  GUEST
+}
+
+enum MatchStatus {
+  SCHEDULED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+enum AttendanceStatus {
+  PRESENT
+  ABSENT
+  LATE
+  EXCUSED
+}
+
+enum TransactionType {
+  COURT_FEE
+  SHUTTLECOCK
+  WATER
+  REFEREE
+  OTHER_EXPENSE
+  MEMBER_PAYMENT
+  GUEST_DEPOSIT
+}
+
+enum TransactionStatus {
+  PENDING
+  PAID
+  CANCELLED
+}
+
+enum ReportReason {
+  FLAKING
+  CLASSIFIED_SCAM
+  SPAM
+  OTHER
+}
+
+// ----------------------------------------------------------------------------
+// Core Models (Week 1 - MVP & Phase 1 Trust System)
+// ----------------------------------------------------------------------------
+
+model User {
+  id             String        @id @default(cuid())
+  provider       AuthProvider
+  providerId     String
+  email          String?       @unique
+  name           String
+  phone          String?
+  avatarUrl      String?
+  skillLevel     String?       // e.g., TB-, TB, TB+, Kha
+  flakeCount     Int           @default(0)
+  totalMatches   Int           @default(0)
+  thumbsUp       Int           @default(0)
+  thumbsDown     Int           @default(0)
+  status         AccountStatus @default(ACTIVE)
+  shadowbanUntil DateTime?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  // Relations
+  ownedClubs     Club[]              @relation("ClubOwner")
+  memberships    ClubMember[]
+  listings       ClassifiedListing[]
+  reportsMade    UserReport[]        @relation("Reporter")
+  reportsAgainst UserReport[]        @relation("ReportedUser")
+
+  @@unique([provider, providerId])
+  @@index([status])
+}
+
+model Club {
+  id               String   @id @default(cuid())
+  name             String
+  slug             String   @unique
+  description      String?
+  location         String?
+  inviteCode       String   @unique
+  bankBin          String?  // NAPAS Bank BIN (e.g., "970436" for Vietcombank)
+  bankAccountNo    String?  // Admin bank account number for VietQR
+  bankAccountName  String?  // Account holder name
+  defaultCourtFee  Int      @default(0) // VND
+  ownerId          String
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  // Relations
+  owner        User          @relation("ClubOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  members      ClubMember[]
+  matches      Match[]
+  transactions Transaction[]
+
+  @@index([ownerId])
+}
+
+model ClubMember {
+  id          String   @id @default(cuid())
+  clubId      String
+  userId      String?  // Nullable for Single-Player Admin mode (members don't need an account)
+  displayName String
+  phone       String?
+  role        ClubRole @default(MEMBER)
+  debtBalance Int      @default(0) // Accumulated unpaid balance in VND
+  isActive    Boolean  @default(true)
+  joinedAt    DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  club         Club          @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  user         User?         @relation(fields: [userId], references: [id], onDelete: SetNull)
+  attendances  Attendance[]
+  transactions Transaction[]
+
+  @@unique([clubId, userId])
+  @@index([clubId])
+}
+
+model Match {
+  id              String      @id @default(cuid())
+  clubId          String
+  title           String
+  scheduledAt     DateTime
+  location        String?
+  courtCount      Int         @default(1)
+  courtFeeTotal   Int         @default(0) // Total court rent (VND)
+  shuttlecockCost Int         @default(0) // Total shuttlecocks expense (VND)
+  extraCost       Int         @default(0) // Water, referee, etc. (VND)
+  extraCostNote   String?
+  feePerPlayer    Int         @default(0) // Auto-calculated split per present player (VND)
+  guestDeposit    Int         @default(50000) // Anti-flaking deposit for drop-in guests (VND)
+  status          MatchStatus @default(SCHEDULED)
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  // Relations
+  club         Club          @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  attendances  Attendance[]
+  transactions Transaction[]
+
+  @@index([clubId, scheduledAt])
+}
+
+model Attendance {
+  id           String           @id @default(cuid())
+  matchId      String
+  clubMemberId String
+  status       AttendanceStatus @default(PRESENT)
+  isGuest      Boolean          @default(false)
+  depositPaid  Boolean          @default(false)
+  amountOwed   Int              @default(0) // Calculated share for this match (VND)
+  isSettled    Boolean          @default(false)
+  checkedInAt  DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
+
+  // Relations
+  match      Match      @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  clubMember ClubMember @relation(fields: [clubMemberId], references: [id], onDelete: Cascade)
+
+  @@unique([matchId, clubMemberId])
+  @@index([matchId])
+  @@index([clubMemberId])
+}
+
+model Transaction {
+  id             String            @id @default(cuid())
+  clubId         String
+  matchId        String?
+  clubMemberId   String?
+  type           TransactionType
+  amount         Int               // Amount in VND
+  description    String?
+  transferSyntax String?           // Standardized syntax, e.g. "SB CLBCAULONG T10 MINH"
+  vietQrUrl      String?           // Dynamic VietQR image URL
+  status         TransactionStatus @default(PENDING)
+  paidAt         DateTime?
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+
+  // Relations
+  club       Club        @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  match      Match?      @relation(fields: [matchId], references: [id], onDelete: SetNull)
+  clubMember ClubMember? @relation(fields: [clubMemberId], references: [id], onDelete: SetNull)
+
+  @@index([clubId, status])
+  @@index([clubMemberId])
+}
+
+// ----------------------------------------------------------------------------
+// Phase 1 Community Expansion: Gear Classifieds & Trust/Anti-Flaking Reports
+// ----------------------------------------------------------------------------
+
+model ClassifiedListing {
+  id          String   @id @default(cuid())
+  sellerId    String
+  title       String
+  category    String   // RACKET, SHOES, BAG, ACCESSORY
+  price       Int      // VND
+  condition   String   // NEW, LIKE_NEW, USED
+  description String
+  imageUrls   String[]
+  contactZalo String?
+  contactPhone String?
+  isSold      Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  seller User @relation(fields: [sellerId], references: [id], onDelete: Cascade)
+
+  @@index([sellerId, isSold])
+}
+
+model UserReport {
+  id             String       @id @default(cuid())
+  reporterId     String
+  reportedUserId String
+  reason         ReportReason
+  details        String?
+  createdAt      DateTime     @default(now())
+
+  reporter     User @relation("Reporter", fields: [reporterId], references: [id], onDelete: Cascade)
+  reportedUser User @relation("ReportedUser", fields: [reportedUserId], references: [id], onDelete: Cascade)
+
+  @@index([reportedUserId])
+}

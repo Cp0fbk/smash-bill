@@ -1,0 +1,30 @@
+{
+  "name": "smash-bill",
+  "version": "0.1.0",
+  "private": true,
+  "description": "SmashBill - Sports SaaS for Badminton Club Fund, Attendance & VietQR Billing Management",
+  "packageManager": "pnpm@11.22.0",
+  "scripts": {
+    "dev": "pnpm --parallel -r run dev",
+    "dev:api": "pnpm --filter @smash-bill/api run dev",
+    "dev:web": "pnpm --filter @smash-bill/web run dev",
+    "build": "pnpm -r run build",
+    "start:api": "pnpm --filter @smash-bill/api run start:prod",
+    "start:web": "pnpm --filter @smash-bill/web run start",
+    "lint": "biome lint .",
+    "format": "biome format --write .",
+    "check": "biome check --write .",
+    "db:generate": "pnpm --filter @smash-bill/api run db:generate",
+    "db:migrate": "pnpm --filter @smash-bill/api run db:migrate",
+    "db:push": "pnpm --filter @smash-bill/api run db:push",
+    "db:studio": "pnpm --filter @smash-bill/api run db:studio"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "1.9.4",
+    "typescript": "^5.7.3"
+  },
+  "engines": {
+    "node": ">=20.0.0",
+    "pnpm": ">=9.0.0"
+  }
+}
