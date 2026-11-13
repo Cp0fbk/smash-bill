@@ -1,11 +1,14 @@
 import { Body, Controller, Post } from '@nestjs/common';
+import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { BillingService } from './billing.service';
 
+@ApiTags('billing')
 @Controller('billing')
 export class BillingController {
   constructor(private readonly billingService: BillingService) {}
 
   @Post('preview-split')
+  @ApiOperation({ summary: 'Preview equal match fee split rounded up to 1,000 VND' })
   previewSplit(
     @Body()
     payload: {
@@ -19,6 +22,7 @@ export class BillingController {
   }
 
   @Post('vietqr')
+  @ApiOperation({ summary: 'Generate dynamic VietQR checkout link' })
   generateVietQr(
     @Body()
     payload: {
