@@ -6,9 +6,11 @@
   "scripts": {
     "dev": "next dev --port 3000",
     "build": "next build",
-    "start": "next start --port 3000"
+    "start": "next start --port 3000",
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@smash-bill/shared": "workspace:*",
     "next": "15.1.6",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
