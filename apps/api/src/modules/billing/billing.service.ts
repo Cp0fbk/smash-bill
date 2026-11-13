@@ -1,11 +1,11 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
+import {
+  type SplitCalculationInput,
+  type SplitCalculationResult,
+  calculateMatchSplit as calculateDomainMatchSplit,
+} from './domain/split-cost';
 
-export interface SplitCalculationInput {
-  courtFeeTotal: number;
-  shuttlecockCost: number;
-  extraCost?: number;
-  presentPlayerCount: number;
-}
+export type { SplitCalculationInput, SplitCalculationResult };
 
 export interface VietQrInput {
   bankBin: string;
@@ -21,26 +21,14 @@ export class BillingService {
    * Automatically splits court fee, shuttlecock cost, and extra expenses
    * evenly across present players (rounded up to nearest 1,000 VND for clean transfers).
    */
-  calculateMatchSplit(input: SplitCalculationInput) {
-    const { courtFeeTotal, shuttlecockCost, extraCost = 0, presentPlayerCount } = input;
-
-    if (presentPlayerCount <= 0) {
-      throw new BadRequestException('presentPlayerCount must be greater than 0');
+  calculateMatchSplit(input: SplitCalculationInput): SplitCalculationResult {
+    try {
+      return calculateDomainMatchSplit(input);
+    } catch (error) {
+      throw new BadRequestException(
+        error instanceof Error ? error.message : 'Invalid split calculation input',
+      );
     }
-
-    const totalCost = courtFeeTotal + shuttlecockCost + extraCost;
-    const rawFeePerPlayer = totalCost / presentPlayerCount;
-    const roundedFeePerPlayer = Math.ceil(rawFeePerPlayer / 1000) * 1000;
-    const clubFundSurplus = roundedFeePerPlayer * presentPlayerCount - totalCost;
-
-    return {
-      totalCost,
-      presentPlayerCount,
-      rawFeePerPlayer: Math.round(rawFeePerPlayer),
-      roundedFeePerPlayer,
-      clubFundSurplus,
-      currency: 'VND',
-    };
   }
 
   /**

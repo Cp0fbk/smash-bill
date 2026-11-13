@@ -8,12 +8,16 @@
     "dev": "pnpm --parallel -r run dev",
     "dev:api": "pnpm --filter @smash-bill/api run dev",
     "dev:web": "pnpm --filter @smash-bill/web run dev",
-    "build": "pnpm -r run build",
+    "build": "pnpm --filter @smash-bill/shared run build && pnpm -r run build",
     "start:api": "pnpm --filter @smash-bill/api run start:prod",
     "start:web": "pnpm --filter @smash-bill/web run start",
     "lint": "biome lint .",
     "format": "biome format --write .",
     "check": "biome check --write .",
+    "typecheck": "pnpm --filter @smash-bill/shared run build && pnpm -r exec tsc --noEmit",
+    "test": "pnpm --filter @smash-bill/shared run build && pnpm -r --if-present run test",
+    "test:watch": "pnpm --parallel -r --if-present run test:watch",
+    "test:e2e": "pnpm --filter @smash-bill/api run test:e2e",
     "db:generate": "pnpm --filter @smash-bill/api run db:generate",
     "db:migrate": "pnpm --filter @smash-bill/api run db:migrate",
     "db:push": "pnpm --filter @smash-bill/api run db:push",
@@ -21,7 +25,9 @@
   },
   "devDependencies": {
     "@biomejs/biome": "1.9.4",
-    "typescript": "^5.7.3"
+    "lefthook": "^1.11.0",
+    "typescript": "^5.7.3",
+    "vitest": "^3.0.5"
   },
   "engines": {
     "node": ">=20.0.0",

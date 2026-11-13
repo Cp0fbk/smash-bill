@@ -6,9 +6,12 @@ on:
   pull_request:
     branches: [main]
 
+permissions:
+  contents: read
+
 jobs:
   quality-and-build:
-    name: Biome Check & Monorepo Build
+    name: Biome Check, Typecheck, Tests & Build
     runs-on: ubuntu-latest
 
     steps:
@@ -35,5 +38,11 @@ jobs:
       - name: Run Biome Linter & Formatter Check
         run: pnpm biome check .
 
-      - name: Build API and Web
+      - name: Run TypeScript Typecheck
+        run: pnpm typecheck
+
+      - name: Run Unit Tests
+        run: pnpm test
+
+      - name: Build Shared, API, and Web
         run: pnpm build
