@@ -40,7 +40,24 @@ export class EnvironmentVariables {
   @IsString()
   @IsNotEmpty()
   @IsOptional()
+  WEB_APP_URL = 'http://localhost:3000';
+
+  @IsString()
+  @IsNotEmpty()
+  @IsOptional()
   JWT_SECRET = 'dev-jwt-secret-change-in-production';
+
+  @IsString()
+  @IsNotEmpty()
+  @IsOptional()
+  JWT_ACCESS_SECRET = 'dev-jwt-access-secret-change-in-production';
+
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  @Max(365)
+  @IsOptional()
+  JWT_REFRESH_TTL_DAYS = 30;
 
   @IsString()
   @IsOptional()
@@ -52,7 +69,7 @@ export class EnvironmentVariables {
 
   @IsString()
   @IsOptional()
-  GOOGLE_CALLBACK_URL?: string;
+  GOOGLE_CALLBACK_URL = 'http://localhost:4000/api/v1/auth/google/callback';
 
   @IsString()
   @IsOptional()
