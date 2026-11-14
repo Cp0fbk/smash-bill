@@ -9,6 +9,7 @@ export class MatchService {
     return this.prisma.match.findUnique({
       where: { id },
       include: {
+        expenses: true,
         attendances: {
           include: {
             clubMember: true,

@@ -1,5 +1,5 @@
 // ============================================================================
-// SmashBill - Prisma Schema
+// SmashBill - Prisma Schema (v2: Append-Only Ledger, Expenses & Public Tokens)
 // Domain: Badminton Club Attendance, Cost Splitting, VietQR Billing & Community
 // ============================================================================
 
@@ -27,6 +27,10 @@ enum AccountStatus {
   BANNED
 }
 
+enum Sport {
+  BADMINTON
+}
+
 enum ClubRole {
   ADMIN
   MEMBER
@@ -40,6 +44,12 @@ enum MatchStatus {
   CANCELLED
 }
 
+enum SplitStrategyType {
+  EQUAL
+  WEIGHTED
+  GUEST_FIXED
+}
+
 enum AttendanceStatus {
   PRESENT
   ABSENT
@@ -47,19 +57,26 @@ enum AttendanceStatus {
   EXCUSED
 }
 
-enum TransactionType {
-  COURT_FEE
+enum ExpenseCategory {
+  COURT
   SHUTTLECOCK
   WATER
   REFEREE
-  OTHER_EXPENSE
-  MEMBER_PAYMENT
-  GUEST_DEPOSIT
+  OTHER
 }
 
-enum TransactionStatus {
+enum LedgerEntryType {
+  CHARGE
+  PAYMENT
+  ADJUSTMENT
+  REFUND
+  FUND_SURPLUS
+}
+
+enum PaymentRequestStatus {
   PENDING
   PAID
+  EXPIRED
   CANCELLED
 }
 
@@ -71,7 +88,7 @@ enum ReportReason {
 }
 
 // ----------------------------------------------------------------------------
-// Core Models (Week 1 - MVP & Phase 1 Trust System)
+// Core Models (Phase 0 Schema v2 - MVP & Phase 1 Trust System)
 // ----------------------------------------------------------------------------
 
 model User {
@@ -93,36 +110,42 @@ model User {
   updatedAt      DateTime      @updatedAt
 
   // Relations
-  ownedClubs     Club[]              @relation("ClubOwner")
-  memberships    ClubMember[]
-  listings       ClassifiedListing[]
-  reportsMade    UserReport[]        @relation("Reporter")
-  reportsAgainst UserReport[]        @relation("ReportedUser")
+  ownedClubs           Club[]              @relation("ClubOwner")
+  memberships          ClubMember[]
+  createdExpenses      Expense[]           @relation("ExpenseCreator")
+  createdLedgerEntries LedgerEntry[]       @relation("LedgerEntryCreator")
+  listings             ClassifiedListing[]
+  reportsMade          UserReport[]        @relation("Reporter")
+  reportsAgainst       UserReport[]        @relation("ReportedUser")
 
   @@unique([provider, providerId])
   @@index([status])
 }
 
 model Club {
-  id               String   @id @default(cuid())
-  name             String
-  slug             String   @unique
-  description      String?
-  location         String?
-  inviteCode       String   @unique
-  bankBin          String?  // NAPAS Bank BIN (e.g., "970436" for Vietcombank)
-  bankAccountNo    String?  // Admin bank account number for VietQR
-  bankAccountName  String?  // Account holder name
-  defaultCourtFee  Int      @default(0) // VND
-  ownerId          String
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
+  id              String   @id @default(cuid())
+  name            String
+  slug            String   @unique
+  description     String?
+  location        String?
+  sport           Sport    @default(BADMINTON)
+  inviteCode      String   @unique
+  publicToken     String   @unique
+  bankBin         String?  // NAPAS Bank BIN (e.g., "970436" for Vietcombank)
+  bankAccountNo   String?  // Admin bank account number for VietQR
+  bankAccountName String?  // Account holder name
+  defaultCourtFee Int      @default(0) // VND
+  ownerId         String
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 
   // Relations
-  owner        User          @relation("ClubOwner", fields: [ownerId], references: [id], onDelete: Cascade)
-  members      ClubMember[]
-  matches      Match[]
-  transactions Transaction[]
+  owner           User             @relation("ClubOwner", fields: [ownerId], references: [id], onDelete: Cascade)
+  members         ClubMember[]
+  matches         Match[]
+  expenses        Expense[]
+  ledgerEntries   LedgerEntry[]
+  paymentRequests PaymentRequest[]
 
   @@index([ownerId])
 }
@@ -134,42 +157,42 @@ model ClubMember {
   displayName String
   phone       String?
   role        ClubRole @default(MEMBER)
-  debtBalance Int      @default(0) // Accumulated unpaid balance in VND
+  publicToken String   @unique
   isActive    Boolean  @default(true)
   joinedAt    DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
   // Relations
-  club         Club          @relation(fields: [clubId], references: [id], onDelete: Cascade)
-  user         User?         @relation(fields: [userId], references: [id], onDelete: SetNull)
-  attendances  Attendance[]
-  transactions Transaction[]
+  club            Club             @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  user            User?            @relation(fields: [userId], references: [id], onDelete: SetNull)
+  attendances     Attendance[]
+  ledgerEntries   LedgerEntry[]
+  paymentRequests PaymentRequest[]
 
   @@unique([clubId, userId])
   @@index([clubId])
 }
 
 model Match {
-  id              String      @id @default(cuid())
-  clubId          String
-  title           String
-  scheduledAt     DateTime
-  location        String?
-  courtCount      Int         @default(1)
-  courtFeeTotal   Int         @default(0) // Total court rent (VND)
-  shuttlecockCost Int         @default(0) // Total shuttlecocks expense (VND)
-  extraCost       Int         @default(0) // Water, referee, etc. (VND)
-  extraCostNote   String?
-  feePerPlayer    Int         @default(0) // Auto-calculated split per present player (VND)
-  guestDeposit    Int         @default(50000) // Anti-flaking deposit for drop-in guests (VND)
-  status          MatchStatus @default(SCHEDULED)
-  createdAt       DateTime    @default(now())
-  updatedAt       DateTime    @updatedAt
+  id            String            @id @default(cuid())
+  clubId        String
+  title         String
+  scheduledAt   DateTime
+  location      String?
+  courtCount    Int               @default(1)
+  guestDeposit  Int               @default(50000) // Anti-flaking deposit for drop-in guests (VND)
+  splitStrategy SplitStrategyType @default(EQUAL)
+  status        MatchStatus       @default(SCHEDULED)
+  settledAt     DateTime?
+  version       Int               @default(0)
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
 
   // Relations
-  club         Club          @relation(fields: [clubId], references: [id], onDelete: Cascade)
-  attendances  Attendance[]
-  transactions Transaction[]
+  club          Club          @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  attendances   Attendance[]
+  expenses      Expense[]
+  ledgerEntries LedgerEntry[]
 
   @@index([clubId, scheduledAt])
 }
@@ -195,28 +218,65 @@ model Attendance {
   @@index([clubMemberId])
 }
 
-model Transaction {
-  id             String            @id @default(cuid())
-  clubId         String
-  matchId        String?
-  clubMemberId   String?
-  type           TransactionType
-  amount         Int               // Amount in VND
-  description    String?
-  transferSyntax String?           // Standardized syntax, e.g. "SB CLBCAULONG T10 MINH"
-  vietQrUrl      String?           // Dynamic VietQR image URL
-  status         TransactionStatus @default(PENDING)
-  paidAt         DateTime?
-  createdAt      DateTime          @default(now())
-  updatedAt      DateTime          @updatedAt
+model Expense {
+  id          String          @id @default(cuid())
+  matchId     String
+  clubId      String
+  category    ExpenseCategory
+  amount      Int             // Integer VND
+  note        String?
+  createdById String
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+  // Relations
+  match     Match @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  club      Club  @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  createdBy User  @relation("ExpenseCreator", fields: [createdById], references: [id], onDelete: Restrict)
+
+  @@index([matchId])
+  @@index([clubId])
+}
+
+model LedgerEntry {
+  id           String          @id @default(cuid())
+  clubId       String
+  clubMemberId String?
+  matchId      String?
+  type         LedgerEntryType
+  amount       Int             // Signed integer VND (+ member owes, - member paid, + fund surplus)
+  note         String?
+  voidedAt     DateTime?
+  createdById  String?
+  createdAt    DateTime        @default(now())
 
   // Relations
   club       Club        @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  clubMember ClubMember? @relation(fields: [clubMemberId], references: [id], onDelete: Restrict)
   match      Match?      @relation(fields: [matchId], references: [id], onDelete: SetNull)
-  clubMember ClubMember? @relation(fields: [clubMemberId], references: [id], onDelete: SetNull)
+  createdBy  User?       @relation("LedgerEntryCreator", fields: [createdById], references: [id], onDelete: SetNull)
 
-  @@index([clubId, status])
-  @@index([clubMemberId])
+  @@index([clubId, clubMemberId])
+  @@index([matchId])
+}
+
+model PaymentRequest {
+  id           String               @id @default(cuid())
+  clubId       String
+  clubMemberId String
+  amount       Int                  // Integer VND
+  transferNote String               // Standardized VietQR transfer syntax
+  qrPayload    String               // EMVCo / VietQR payload or URL
+  status       PaymentRequestStatus @default(PENDING)
+  paidAt       DateTime?
+  createdAt    DateTime             @default(now())
+
+  // Relations
+  club       Club       @relation(fields: [clubId], references: [id], onDelete: Cascade)
+  clubMember ClubMember @relation(fields: [clubMemberId], references: [id], onDelete: Restrict)
+
+  @@index([clubMemberId, status])
+  @@index([clubId])
 }
 
 // ----------------------------------------------------------------------------
@@ -224,19 +284,19 @@ model Transaction {
 // ----------------------------------------------------------------------------
 
 model ClassifiedListing {
-  id          String   @id @default(cuid())
-  sellerId    String
-  title       String
-  category    String   // RACKET, SHOES, BAG, ACCESSORY
-  price       Int      // VND
-  condition   String   // NEW, LIKE_NEW, USED
-  description String
-  imageUrls   String[]
-  contactZalo String?
+  id           String   @id @default(cuid())
+  sellerId     String
+  title        String
+  category     String   // RACKET, SHOES, BAG, ACCESSORY
+  price        Int      // VND
+  condition    String   // NEW, LIKE_NEW, USED
+  description  String
+  imageUrls    String[]
+  contactZalo  String?
   contactPhone String?
-  isSold      Boolean  @default(false)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  isSold       Boolean  @default(false)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
   seller User @relation(fields: [sellerId], references: [id], onDelete: Cascade)
 
