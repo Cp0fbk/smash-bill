@@ -1,3 +1,5 @@
+import { UserSessionBar } from '../../components/user-session-bar';
+
 const SAMPLE_PLAYERS = [
   { name: 'Minh Nguyen (Admin)', role: 'Regular', present: true, debt: '65,000 ₫' },
   { name: 'Hoang Le', role: 'Regular', present: true, debt: '65,000 ₫' },
@@ -40,9 +42,7 @@ export default function HomePage() {
             <p className="text-xs text-emerald-400">Badminton Fund & Attendance PWA</p>
           </div>
         </div>
-        <span className="rounded-full bg-slate-800 px-3 py-1 text-xs font-medium text-slate-300 ring-1 ring-slate-700 tabular-nums">
-          MVP v0.1.0
-        </span>
+        <UserSessionBar />
       </header>
 
       {/* Main Content */}
