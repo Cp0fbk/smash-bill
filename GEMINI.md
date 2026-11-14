@@ -40,13 +40,26 @@ Every commit message MUST follow the Conventional Commits specification:
     - `db(schema): add index on attendance matchId and status`
     - `docs(context): update week 2 progress and session changelog`
 
-### 2.2. Branch Naming Convention
+### 2.2. Branching Model (`develop` → `main`)
+- **`main`**: production-ready code only. Never commit or push directly; it only receives release PRs from `develop` (or `hotfix/*`). Releases are tagged `v*` on `main`.
+- **`develop`**: integration branch. **Every work branch is created from `develop` and merged back into `develop` via PR** (CI must be green).
+- **Release:** when `develop` is stable, open a PR `develop` → `main`, merge, then tag `vX.Y.Z` on `main`.
+- **Hotfix:** branch `hotfix/<scope>-<slug>` from `main`, PR into `main`, then merge `main` back into `develop`.
+- Start a new branch:
+  ```powershell
+  git switch develop
+  git pull origin develop
+  git switch -c <type>/<scope>-<short-slug>
+  ```
+
+### 2.3. Branch Naming Convention
 - Feature branches: `feat/<scope>-<short-slug>` (e.g., `feat/billing-vietqr-settlement`)
 - Bug fixes: `fix/<scope>-<short-slug>` (e.g., `fix/match-guest-deposit-calc`)
+- Hotfixes (from `main`): `hotfix/<scope>-<short-slug>`
 - Database/schema work: `db/<short-slug>`
-- Chores/docs: `chore/<short-slug>` or `docs/<short-slug>`
+- Chores/docs/CI: `chore/<short-slug>`, `docs/<short-slug>`, or `ci/<short-slug>`
 
-### 2.3. Pre-Commit Quality Gate
+### 2.4. Pre-Commit Quality Gate
 Never commit broken or unformatted code. Before every `git commit`, run:
 1. `pnpm db:generate` (if `apps/api/prisma/schema.prisma` changed)
 2. `pnpm check` (runs Biome linter + formatter across the monorepo)
