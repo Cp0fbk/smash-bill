@@ -21,6 +21,7 @@
     "db:generate": "pnpm --filter @smash-bill/api run db:generate",
     "db:migrate": "pnpm --filter @smash-bill/api run db:migrate",
     "db:push": "pnpm --filter @smash-bill/api run db:push",
+    "db:seed": "pnpm --filter @smash-bill/api run db:seed",
     "db:studio": "pnpm --filter @smash-bill/api run db:studio"
   },
   "devDependencies": {
