@@ -64,11 +64,17 @@ export class AuthController {
     @Param('provider') provider: string,
     @Query('code') code: string | undefined,
     @Query('state') state: string | undefined,
+    @Query('error') error: string | undefined,
     @Req() req: Request,
     @Res() res: Response,
   ): Promise<void> {
     const oauthCookieValue = getCookie(req, OAUTH_COOKIE_NAME);
     clearOAuthStateCookie(res, this.isProd);
+
+    if (error) {
+      res.redirect(HttpStatus.FOUND, `${this.webAppUrl}/login?error=${encodeURIComponent(error)}`);
+      return;
+    }
 
     const userAgent =
       typeof req.headers['user-agent'] === 'string' ? req.headers['user-agent'] : undefined;

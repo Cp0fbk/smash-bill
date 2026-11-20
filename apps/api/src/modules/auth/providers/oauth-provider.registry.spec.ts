@@ -75,4 +75,19 @@ describe('OAuthProviderRegistry & GoogleOAuthProvider', () => {
     expect(url.searchParams.get('code_challenge')).toBe(expectedChallenge);
     expect(url.searchParams.get('code_challenge_method')).toBe('S256');
   });
+
+  it('throws 400 OAUTH_NOT_CONFIGURED when GOOGLE_CLIENT_ID is empty', () => {
+    const config = new ConfigService({
+      GOOGLE_CLIENT_ID: '',
+      GOOGLE_CALLBACK_URL: 'http://localhost:4000/api/v1/auth/google/callback',
+    });
+    const provider = new GoogleOAuthProvider(config);
+
+    expect(() =>
+      provider.getAuthorizationUrl({
+        state: 'state-123',
+        codeVerifier: 'verifier-123',
+      }),
+    ).toThrowError(BadRequestException);
+  });
 });

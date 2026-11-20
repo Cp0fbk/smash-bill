@@ -1,5 +1,5 @@
 import { createHash } from 'node:crypto';
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { BadRequestException, Injectable, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { AuthProvider } from '@prisma/client';
 import { CodeChallengeMethod, OAuth2Client } from 'google-auth-library';
@@ -14,18 +14,28 @@ export class GoogleOAuthProvider implements OAuthProvider {
   readonly name = AuthProvider.GOOGLE;
   private readonly client: OAuth2Client;
   private readonly clientId: string;
+  private readonly clientSecret: string;
+  private readonly callbackUrl: string;
 
   constructor(private readonly configService: ConfigService) {
-    this.clientId = this.configService.get<string>('GOOGLE_CLIENT_ID') ?? '';
-    const clientSecret = this.configService.get<string>('GOOGLE_CLIENT_SECRET') ?? '';
-    const callbackUrl =
-      this.configService.get<string>('GOOGLE_CALLBACK_URL') ??
+    this.clientId = (this.configService.get<string>('GOOGLE_CLIENT_ID') ?? '').trim();
+    this.clientSecret = (this.configService.get<string>('GOOGLE_CLIENT_SECRET') ?? '').trim();
+    this.callbackUrl =
+      (this.configService.get<string>('GOOGLE_CALLBACK_URL') ?? '').trim() ||
       'http://localhost:4000/api/v1/auth/google/callback';
 
-    this.client = new OAuth2Client(this.clientId, clientSecret, callbackUrl);
+    this.client = new OAuth2Client(this.clientId, this.clientSecret, this.callbackUrl);
   }
 
   getAuthorizationUrl(params: { state: string; codeVerifier: string }): string {
+    if (!this.clientId || !this.clientSecret) {
+      throw new BadRequestException({
+        code: 'OAUTH_NOT_CONFIGURED',
+        message:
+          'Google OAuth is not configured. Set GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET in .env.',
+      });
+    }
+
     const codeChallenge = derivePkceCodeChallenge(params.codeVerifier);
 
     return this.client.generateAuthUrl({
@@ -64,7 +74,7 @@ export class GoogleOAuthProvider implements OAuthProvider {
       });
     }
 
-    const fallbackName = payload.email ? payload.email.split('@')[0] : 'Google Player';
+    const fallbackName = payload.email ? payload.email.split('@')[0] : 'Người chơi Google';
     const name = payload.name?.trim() || fallbackName;
 
     return {
