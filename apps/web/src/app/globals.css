@@ -1,11 +1,196 @@
 @import "tailwindcss";
+@custom-variant dark (&:where(.dark, .dark *));
 
 :root {
+  color-scheme: light;
+
+  /* Core Surfaces (Clean Minimal Light Mode — Shuttlecock Logo Palette /logo.jpg) */
+  --color-background: #f8fafc;
+  --color-foreground: #0f172a;
+  --color-card: #ffffff;
+  --color-card-foreground: #0f172a;
+  --color-secondary: #f1f5f9;
+  --color-secondary-foreground: #1e293b;
+  --color-muted: #e2e8f0;
+  --color-muted-foreground: #64748b;
+
+  /* Brand & Semantic Accents */
+  --color-primary: #0060d0;
+  --color-primary-hover: #004ca6;
+  --color-primary-soft: #eff6ff;
+  --color-on-primary: #ffffff;
+
+  --color-accent-qr: #0284c7;
+  --color-accent-qr-soft: #e0f2fe;
+  --color-on-accent-qr: #0369a1;
+
+  --color-success: #059669;
+  --color-success-soft: #ecfdf5;
+  --color-on-success: #ffffff;
+  --color-on-success-soft: #047857;
+
+  --color-warning: #d97706;
+  --color-warning-soft: #fffbeb;
+  --color-on-warning-soft: #b45309;
+
+  --color-destructive: #dc2626;
+  --color-destructive-soft: #fef2f2;
+  --color-on-destructive: #ffffff;
+
+  /* Hairline Borders & Focus Ring */
+  --color-border: #e2e8f0;
+  --color-border-strong: #0060d0;
+  --color-ring: #0060d0;
+
+  /* Minimalism & Swiss Style Radii & Soft Elevation */
+  --typography-display: clamp(1.625rem, 2.5vw, 2.125rem);
+  --radius-block: 1.25rem;
+  --radius-tile: 0.75rem;
+  --radius-pill: 9999px;
+  --shadow-block: 0 12px 32px -8px rgba(15, 23, 42, 0.07), 0 2px 6px -1px rgba(15, 23, 42, 0.04);
+  --shadow-tile: 0 1px 2px 0 rgba(15, 23, 42, 0.04);
+  --shadow-cta: 0 4px 14px 0 rgba(0, 96, 208, 0.25);
+}
+
+.dark {
   color-scheme: dark;
+
+  /* Core Surfaces (Midnight Navy matched to /logo_dark.jpg) */
+  --color-background: #040d1a;
+  --color-foreground: #f8fafc;
+  --color-card: #081629;
+  --color-card-foreground: #f8fafc;
+  --color-secondary: #0f233d;
+  --color-secondary-foreground: #e2e8f0;
+  --color-muted: #162e4d;
+  --color-muted-foreground: #94a3b8;
+
+  --color-primary: #38bdf8;
+  --color-primary-hover: #0ea5e9;
+  --color-primary-soft: #0c2948;
+  --color-on-primary: #040d1a;
+
+  --color-accent-qr: #22d3ee;
+  --color-accent-qr-soft: #083344;
+  --color-on-accent-qr: #a5f3fc;
+
+  --color-success: #10b981;
+  --color-success-soft: #062e24;
+  --color-on-success: #022c22;
+  --color-on-success-soft: #6ee7b7;
+
+  --color-warning: #fbbf24;
+  --color-warning-soft: #451a03;
+  --color-on-warning-soft: #fde68a;
+
+  --color-destructive: #fb7185;
+  --color-destructive-soft: #4c0519;
+  --color-on-destructive: #040d1a;
+
+  --color-border: #173052;
+  --color-border-strong: #38bdf8;
+  --color-ring: #38bdf8;
+
+  --shadow-block: 0 16px 40px -10px rgba(0, 0, 0, 0.55);
+  --shadow-tile: 0 1px 2px 0 rgba(0, 0, 0, 0.3);
+  --shadow-cta: 0 4px 16px 0 rgba(56, 189, 248, 0.28);
+}
+
+@theme inline {
+  --font-sans: "Inter", "Plus Jakarta Sans", ui-sans-serif, system-ui, -apple-system,
+    BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  --font-mono: "JetBrains Mono", "Fira Code", ui-monospace, SFMono-Regular, "Cascadia Mono",
+    "Consolas", "Liberation Mono", monospace;
+
+  --color-background: var(--color-background);
+  --color-foreground: var(--color-foreground);
+  --color-card: var(--color-card);
+  --color-card-foreground: var(--color-card-foreground);
+  --color-secondary: var(--color-secondary);
+  --color-secondary-foreground: var(--color-secondary-foreground);
+  --color-muted: var(--color-muted);
+  --color-muted-foreground: var(--color-muted-foreground);
+
+  --color-primary: var(--color-primary);
+  --color-primary-hover: var(--color-primary-hover);
+  --color-primary-soft: var(--color-primary-soft);
+  --color-on-primary: var(--color-on-primary);
+
+  --color-accent-qr: var(--color-accent-qr);
+  --color-accent-qr-soft: var(--color-accent-qr-soft);
+  --color-on-accent-qr: var(--color-on-accent-qr);
+
+  --color-success: var(--color-success);
+  --color-success-soft: var(--color-success-soft);
+  --color-on-success: var(--color-on-success);
+  --color-on-success-soft: var(--color-on-success-soft);
+
+  --color-warning: var(--color-warning);
+  --color-warning-soft: var(--color-warning-soft);
+  --color-on-warning-soft: var(--color-on-warning-soft);
+
+  --color-destructive: var(--color-destructive);
+  --color-destructive-soft: var(--color-destructive-soft);
+  --color-on-destructive: var(--color-on-destructive);
+
+  --color-border: var(--color-border);
+  --color-border-strong: var(--color-border-strong);
+  --color-ring: var(--color-ring);
+
+  --radius-block: var(--radius-block);
+  --radius-tile: var(--radius-tile);
+  --radius-pill: var(--radius-pill);
+
+  --shadow-block: var(--shadow-block);
+  --shadow-tile: var(--shadow-tile);
+  --shadow-cta: var(--shadow-cta);
 }
 
 body {
-  background-color: #090d16;
-  color: #f8fafc;
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  background-color: var(--color-background);
+  background-image: radial-gradient(circle at 50% 0%, rgba(0, 96, 208, 0.07), transparent 55%);
+  color: var(--color-foreground);
+  font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+}
+
+.text-display-block {
+  font-size: var(--typography-display);
+  line-height: 1.15;
+  letter-spacing: -0.025em;
+}
+
+@keyframes splashProgress {
+  0% {
+    transform: scaleX(0);
+  }
+  100% {
+    transform: scaleX(1);
+  }
+}
+
+@keyframes fadeUp {
+  0% {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-splash-progress {
+  transform-origin: left center;
+  animation: splashProgress 1.8s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+.animate-fade-up {
+  animation: fadeUp 280ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-splash-progress,
+  .animate-fade-up {
+    animation: none;
+  }
 }

@@ -54,8 +54,8 @@ export function UserSessionBar() {
   if (loading) {
     return (
       <div
-        aria-label="Loading profile"
-        className="h-11 w-36 animate-pulse rounded-xl bg-slate-800/80 motion-reduce:animate-none"
+        aria-label="Đang tải tài khoản"
+        className="h-11 w-32 animate-pulse rounded-tile bg-secondary motion-reduce:animate-none"
       />
     );
   }
@@ -64,9 +64,9 @@ export function UserSessionBar() {
     return (
       <a
         href="/login"
-        className="inline-flex min-h-[44px] cursor-pointer items-center gap-2 rounded-xl bg-emerald-500 px-3.5 py-2 text-xs font-semibold text-slate-950 transition-colors duration-150 hover:bg-emerald-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 motion-reduce:transition-none [touch-action:manipulation]"
+        className="inline-flex min-h-[44px] cursor-pointer items-center gap-2 rounded-tile bg-primary px-4 py-2 text-xs font-semibold text-on-primary shadow-tile transition-colors duration-200 hover:bg-primary-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring motion-reduce:transition-none [touch-action:manipulation]"
       >
-        <span>Sign in</span>
+        <span>Đăng nhập</span>
       </a>
     );
   }
@@ -74,30 +74,30 @@ export function UserSessionBar() {
   const initials = user.name
     .split(' ')
     .filter(Boolean)
-    .slice(0, 2)
+    .slice(-2)
     .map((part) => part[0]?.toUpperCase() ?? '')
     .join('');
 
   return (
-    <div className="flex items-center gap-2">
-      <div className="flex items-center gap-2 rounded-xl border border-slate-800 bg-slate-900/90 px-2.5 py-1.5">
+    <div className="flex w-full min-w-0 items-center justify-between gap-2 sm:w-auto sm:justify-end">
+      <div className="flex min-h-[44px] min-w-0 items-center gap-2.5 rounded-tile border border-border bg-secondary/70 px-3 py-1.5">
         {user.avatarUrl ? (
           <img
             src={user.avatarUrl}
-            alt={`${user.name} avatar`}
-            width={28}
-            height={28}
-            className="h-7 w-7 rounded-full object-cover ring-1 ring-emerald-500/40"
+            alt={user.name}
+            width={26}
+            height={26}
+            className="h-6.5 w-6.5 shrink-0 rounded-full object-cover"
           />
         ) : (
           <span
             aria-hidden="true"
-            className="flex h-7 w-7 items-center justify-center rounded-full bg-emerald-500/20 text-xs font-bold text-emerald-300 ring-1 ring-emerald-500/40"
+            className="flex h-6.5 w-6.5 shrink-0 items-center justify-center rounded-full bg-primary text-xs font-bold text-on-primary"
           >
             {initials || 'SB'}
           </span>
         )}
-        <span className="max-w-[120px] truncate text-xs font-semibold text-slate-100 sm:max-w-[180px]">
+        <span className="max-w-[200px] truncate text-xs font-semibold text-card-foreground sm:max-w-[160px]">
           {user.name}
         </span>
       </div>
@@ -106,12 +106,12 @@ export function UserSessionBar() {
         type="button"
         onClick={handleLogout}
         disabled={loggingOut}
-        aria-label="Log out"
-        className="inline-flex min-h-[44px] min-w-[44px] cursor-pointer items-center justify-center gap-1.5 rounded-xl border border-slate-800 bg-slate-900 px-3 py-2 text-xs font-medium text-slate-300 transition-colors duration-150 hover:border-slate-700 hover:bg-slate-800 hover:text-slate-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 disabled:opacity-50 motion-reduce:transition-none [touch-action:manipulation]"
+        aria-label="Đăng xuất"
+        className="inline-flex min-h-[44px] min-w-[44px] shrink-0 cursor-pointer items-center justify-center gap-1.5 rounded-tile border border-border bg-card px-3 py-2 text-xs font-semibold text-secondary-foreground shadow-tile transition-colors duration-200 hover:border-destructive hover:bg-destructive-soft hover:text-destructive focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:opacity-50 motion-reduce:transition-none [touch-action:manipulation]"
       >
         <svg
           aria-hidden="true"
-          className="h-4 w-4 text-slate-400"
+          className="h-4 w-4"
           viewBox="0 0 24 24"
           fill="none"
           stroke="currentColor"
@@ -123,7 +123,7 @@ export function UserSessionBar() {
           <polyline points="16 17 21 12 16 7" />
           <line x1="21" x2="9" y1="12" y2="12" />
         </svg>
-        <span className="hidden sm:inline">Logout</span>
+        <span className="hidden sm:inline">{loggingOut ? 'Đang thoát...' : 'Đăng xuất'}</span>
       </button>
     </div>
   );

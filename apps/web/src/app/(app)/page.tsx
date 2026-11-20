@@ -1,214 +1,259 @@
+'use client';
+
+import { useState } from 'react';
+import { BrandLogo } from '../../components/brand-logo';
+import { ThemeToggle } from '../../components/theme-toggle';
 import { UserSessionBar } from '../../components/user-session-bar';
 
-const SAMPLE_PLAYERS = [
-  { name: 'Minh Nguyen (Admin)', role: 'Regular', present: true, debt: '65,000 ₫' },
-  { name: 'Hoang Le', role: 'Regular', present: true, debt: '65,000 ₫' },
-  { name: 'Thao Pham', role: 'Regular', present: true, debt: '130,000 ₫ (2 sessions)' },
-  {
-    name: 'Khanh Tran (Vãng lai)',
-    role: 'Guest • 50k Deposit Paid',
-    present: true,
-    debt: '15,000 ₫',
-  },
-  { name: 'Duc Vu', role: 'Regular', present: false, debt: '0 ₫' },
+interface CourtPlayer {
+  id: string;
+  name: string;
+  code: string;
+  roleLabel: string;
+  present: boolean;
+}
+
+const INITIAL_PLAYERS: CourtPlayer[] = [
+  { id: 'p1', name: 'Nguyễn Quang Minh', code: 'MINH', roleLabel: 'Chủ CLB', present: true },
+  { id: 'p2', name: 'Lê Hoàng', code: 'HOANG', roleLabel: 'Cố định', present: true },
+  { id: 'p3', name: 'Phạm Thảo', code: 'THAO', roleLabel: 'Cố định', present: true },
+  { id: 'p4', name: 'Trần Khánh', code: 'KHANH', roleLabel: 'Vãng lai', present: true },
+  { id: 'p5', name: 'Vũ Đức', code: 'DUC', roleLabel: 'Cố định', present: false },
 ];
 
+const SESSION_COST_VND = 265000;
+
+function formatVnd(amount: number): string {
+  return `${new Intl.NumberFormat('vi-VN').format(Math.max(0, amount))} ₫`;
+}
+
 export default function HomePage() {
+  const [players, setPlayers] = useState<CourtPlayer[]>(INITIAL_PLAYERS);
+  const [selectedId, setSelectedId] = useState<string>('p1');
+  const [copied, setCopied] = useState(false);
+
+  const presentCount = players.filter((p) => p.present).length;
+  const perPlayerShare =
+    presentCount > 0 ? Math.ceil(SESSION_COST_VND / presentCount / 1000) * 1000 : 0;
+  const clubFundSurplus = Math.max(0, perPlayerShare * presentCount - SESSION_COST_VND);
+
+  const selectedPlayer = players.find((p) => p.id === selectedId) ?? players[0];
+  const selectedDue = selectedPlayer?.present ? perPlayerShare : 0;
+  const transferSyntax = `SB SAOMAI ${selectedPlayer?.code ?? 'MINH'}`;
+  const vietQrUrl = `https://img.vietqr.io/image/970436-0071000888999-compact2.png?amount=${selectedDue}&addInfo=${encodeURIComponent(transferSyntax)}&accountName=${encodeURIComponent('NGUYEN QUANG MINH')}`;
+
+  function toggleAttendance(id: string) {
+    setPlayers((prev) => prev.map((p) => (p.id === id ? { ...p, present: !p.present } : p)));
+    setSelectedId(id);
+  }
+
+  async function copySyntax() {
+    try {
+      await navigator.clipboard.writeText(transferSyntax);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1600);
+    } catch {
+      // Ignore clipboard error
+    }
+  }
+
   return (
-    <main className="mx-auto flex min-h-dvh max-w-md flex-col justify-between px-4 py-6 sm:max-w-2xl">
-      {/* Header */}
-      <header className="flex items-center justify-between border-b border-slate-800 pb-4">
-        <div className="flex items-center gap-2.5">
-          <span
-            aria-hidden="true"
-            className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-500/15 text-emerald-400 ring-1 ring-emerald-500/40"
-          >
-            <svg
-              aria-hidden="true"
-              className="h-5 w-5"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <path d="M12 18a3 3 0 1 0 0 6 3 3 0 0 0 0-6Z" />
-              <path d="m9.5 18.5-5-14.5 5.5 3 2-5 2 5 5.5-3-5 14.5" />
-            </svg>
-          </span>
-          <div>
-            <h1 className="text-lg font-bold tracking-tight text-white">SmashBill</h1>
-            <p className="text-xs text-emerald-400">Badminton Fund & Attendance PWA</p>
+    <div className="mx-auto min-h-dvh max-w-5xl px-4 py-6 sm:px-6 lg:py-8">
+      {/* Minimal Header */}
+      <header className="flex flex-col gap-2.5 rounded-block border border-border bg-card px-4 py-3 shadow-block sm:flex-row sm:items-center sm:justify-between sm:px-5 sm:py-3.5">
+        <div className="flex min-w-0 items-center justify-between gap-2">
+          <div className="flex min-w-0 items-center gap-2.5 sm:gap-3">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-border bg-card p-1.5 shadow-tile sm:h-10 sm:w-10">
+              <BrandLogo alt="SmashBill" size={30} />
+            </div>
+            <div className="flex min-w-0 items-center gap-2">
+              <span className="shrink-0 text-base font-bold tracking-tight text-card-foreground">
+                Smash<span className="text-primary">Bill</span>
+              </span>
+              <span className="shrink-0 whitespace-nowrap rounded-pill bg-primary-soft px-2.5 py-0.5 text-xs font-semibold text-primary">
+                CLB Sao Mai
+              </span>
+            </div>
+          </div>
+
+          <div className="shrink-0 sm:hidden">
+            <ThemeToggle />
           </div>
         </div>
-        <UserSessionBar />
+
+        <div className="flex items-center justify-end gap-2 border-t border-border pt-2.5 sm:border-t-0 sm:pt-0">
+          <div className="hidden shrink-0 sm:block">
+            <ThemeToggle />
+          </div>
+          <UserSessionBar />
+        </div>
       </header>
 
       {/* Main Content */}
-      <div className="my-6 space-y-5">
-        {/* Active Match Card */}
-        <section className="rounded-2xl border border-slate-800 bg-slate-900/70 p-4 shadow-lg">
-          <div className="flex items-center justify-between gap-2">
-            <div>
-              <span className="text-xs font-semibold uppercase tracking-wider text-emerald-400">
-                Tonight&apos;s Session • Court #2 & #3
-              </span>
-              <h2 className="mt-0.5 text-base font-semibold text-white tabular-nums">
-                CLB Cầu Lông Sao Mai (20:00 - 22:00)
+      <main className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-12">
+        {/* Left: KPI Summary & 1-Touch Attendance */}
+        <div className="space-y-6 lg:col-span-7">
+          {/* 3 Compact KPI Cards */}
+          <section
+            aria-label="Tổng quan buổi đánh"
+            className="grid grid-cols-3 gap-3 rounded-block border border-border bg-card p-4 shadow-block sm:p-5"
+          >
+            <div className="rounded-tile bg-secondary/70 p-3">
+              <p className="text-xs font-medium text-muted-foreground">Tổng chi phí</p>
+              <p className="mt-1 font-mono text-base font-bold text-card-foreground tabular-nums sm:text-lg">
+                {formatVnd(SESSION_COST_VND)}
+              </p>
+            </div>
+
+            <div className="rounded-tile bg-primary-soft p-3">
+              <p className="text-xs font-medium text-primary">Mỗi người</p>
+              <p className="mt-1 font-mono text-base font-bold text-primary tabular-nums sm:text-lg">
+                {formatVnd(perPlayerShare)}
+              </p>
+            </div>
+
+            <div className="rounded-tile bg-success-soft p-3">
+              <p className="text-xs font-medium text-on-success-soft">Quỹ CLB</p>
+              <p className="mt-1 font-mono text-base font-bold text-success tabular-nums sm:text-lg">
+                +{formatVnd(clubFundSurplus)}
+              </p>
+            </div>
+          </section>
+
+          {/* Attendance List */}
+          <section
+            aria-labelledby="attendance-heading"
+            className="rounded-block border border-border bg-card p-5 shadow-block"
+          >
+            <div className="flex items-center justify-between">
+              <h2 id="attendance-heading" className="text-base font-bold text-card-foreground">
+                Điểm danh ({presentCount}/{players.length})
               </h2>
+              <span className="text-xs text-muted-foreground">Chạm để điểm danh</span>
             </div>
-            <span className="shrink-0 rounded-lg bg-emerald-500/20 px-2.5 py-1 text-xs font-semibold text-emerald-300 tabular-nums">
-              4 Present
-            </span>
-          </div>
 
-          <div className="mt-4 grid grid-cols-3 gap-2 text-center">
-            <div className="rounded-xl bg-slate-950/80 p-2.5 ring-1 ring-slate-800/80">
-              <p className="text-xs text-slate-400">Court + Shuttle</p>
-              <p className="mt-1 text-sm font-bold text-white tabular-nums">260,000 ₫</p>
-            </div>
-            <div className="rounded-xl bg-slate-950/80 p-2.5 ring-1 ring-slate-800/80">
-              <p className="text-xs text-slate-400">Split / Player</p>
-              <p className="mt-1 text-sm font-bold text-emerald-400 tabular-nums">65,000 ₫</p>
-            </div>
-            <div className="rounded-xl bg-slate-950/80 p-2.5 ring-1 ring-slate-800/80">
-              <p className="text-xs text-slate-400">Checkout</p>
-              <p className="mt-1 text-sm font-bold text-sky-400">VietQR Auto</p>
-            </div>
-          </div>
-        </section>
+            <ul className="mt-4 space-y-2">
+              {players.map((player) => {
+                const share = player.present ? perPlayerShare : 0;
+                const isSelected = player.id === selectedPlayer?.id;
 
-        {/* One-Touch Attendance Board Preview */}
-        <section className="rounded-2xl border border-slate-800 bg-slate-900/70 p-4">
-          <div className="mb-3 flex items-center justify-between gap-2">
-            <h3 className="text-sm font-semibold text-slate-200">1-Touch Court Attendance Board</h3>
-            <button
-              type="button"
-              className="inline-flex min-h-[44px] cursor-pointer items-center gap-1.5 rounded-lg bg-slate-800/90 px-3 py-1.5 text-xs font-medium text-emerald-300 ring-1 ring-slate-700 transition-colors duration-150 hover:bg-slate-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400"
-            >
-              <svg
-                aria-hidden="true"
-                className="h-3.5 w-3.5"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2.5"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <path d="M12 5v14M5 12h14" />
-              </svg>
-              Add Guest (Vãng lai)
-            </button>
-          </div>
-
-          <ul className="space-y-2">
-            {SAMPLE_PLAYERS.map((player) => (
-              <li key={player.name}>
-                <button
-                  type="button"
-                  role="switch"
-                  aria-checked={player.present}
-                  className="flex min-h-[48px] w-full cursor-pointer items-center justify-between rounded-xl border border-slate-800/90 bg-slate-950/60 px-3.5 py-2.5 text-left transition-colors duration-150 hover:border-slate-700 hover:bg-slate-900/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 motion-reduce:transition-none"
-                >
-                  <div className="flex items-center gap-3">
-                    <span
-                      aria-hidden="true"
-                      className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-md text-xs font-bold transition-colors duration-150 ${
+                return (
+                  <li key={player.id} className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      role="switch"
+                      aria-checked={player.present}
+                      onClick={() => toggleAttendance(player.id)}
+                      className={`flex min-h-[52px] flex-1 cursor-pointer items-center justify-between rounded-tile border px-3.5 py-2.5 text-left transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring [touch-action:manipulation] ${
                         player.present
-                          ? 'bg-emerald-500 text-slate-950'
-                          : 'border border-slate-700 bg-slate-900 text-transparent'
+                          ? isSelected
+                            ? 'border-border-strong bg-primary-soft/60'
+                            : 'border-border bg-card hover:bg-secondary/50'
+                          : 'border-border bg-secondary/50 opacity-70'
                       }`}
                     >
-                      <svg
-                        aria-hidden="true"
-                        className="h-3.5 w-3.5"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="3"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      >
-                        <path d="M20 6 9 17l-5-5" />
-                      </svg>
-                    </span>
-                    <div>
-                      <p className="text-sm font-medium text-slate-100">{player.name}</p>
-                      <p className="text-xs text-slate-400">{player.role}</p>
-                    </div>
-                  </div>
-                  <span className="text-xs font-semibold text-slate-200 tabular-nums">
-                    {player.debt}
-                  </span>
-                </button>
-              </li>
-            ))}
-          </ul>
-        </section>
+                      <div className="flex items-center gap-3">
+                        <span
+                          aria-hidden="true"
+                          className={`flex h-5 w-5 items-center justify-center rounded-md ${
+                            player.present
+                              ? 'bg-success text-on-success'
+                              : 'border border-border bg-card text-transparent'
+                          }`}
+                        >
+                          <svg
+                            aria-hidden="true"
+                            className="h-3.5 w-3.5"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="3"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          >
+                            <path d="M20 6 9 17l-5-5" />
+                          </svg>
+                        </span>
+                        <div>
+                          <p
+                            className={`text-sm font-semibold ${
+                              player.present
+                                ? 'text-card-foreground'
+                                : 'text-muted-foreground line-through'
+                            }`}
+                          >
+                            {player.name}
+                          </p>
+                          <p className="text-xs text-muted-foreground">{player.roleLabel}</p>
+                        </div>
+                      </div>
 
-        {/* Feature Highlights */}
-        <section className="grid grid-cols-2 gap-3 text-xs">
-          <div className="rounded-xl border border-slate-800 bg-slate-900/40 p-3">
-            <div className="flex items-center gap-1.5 font-semibold text-emerald-400">
-              <svg
-                aria-hidden="true"
-                className="h-4 w-4 shrink-0"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z" />
-                <path d="m9 12 2 2 4-4" />
-              </svg>
-              <span>Google & Zalo SSO</span>
-            </div>
-            <p className="mt-1.5 text-slate-400">
-              Verified player identities & anti-flaking deposit protection for drop-in guests.
-            </p>
-          </div>
-          <div className="rounded-xl border border-slate-800 bg-slate-900/40 p-3">
-            <div className="flex items-center gap-1.5 font-semibold text-sky-400">
-              <svg
-                aria-hidden="true"
-                className="h-4 w-4 shrink-0"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <rect width="5" height="5" x="3" y="3" rx="1" />
-                <rect width="5" height="5" x="16" y="3" rx="1" />
-                <rect width="5" height="5" x="3" y="16" rx="1" />
-                <path d="M21 16h-3a2 2 0 0 0-2 2v3" />
-                <path d="M21 21v.01" />
-                <path d="M12 7v3a2 2 0 0 1-2 2H7" />
-                <path d="M3 12h.01" />
-                <path d="M12 3h.01" />
-                <path d="M12 16v.01" />
-                <path d="M16 12h1" />
-                <path d="M21 12v.01" />
-                <path d="M12 21v-1" />
-              </svg>
-              <span>Dynamic VietQR</span>
-            </div>
-            <p className="mt-1.5 text-slate-400">
-              Pre-filled bank account, exact debt & transfer syntax in one scan.
-            </p>
-          </div>
-        </section>
-      </div>
+                      <span className="font-mono text-sm font-bold text-primary tabular-nums">
+                        {formatVnd(share)}
+                      </span>
+                    </button>
 
-      {/* Footer */}
-      <footer className="border-t border-slate-800 pt-4 text-center text-xs text-slate-400">
-        SmashBill Monorepo • Next.js PWA + NestJS + Prisma + PostgreSQL + Biome
-      </footer>
-    </main>
+                    <button
+                      type="button"
+                      onClick={() => setSelectedId(player.id)}
+                      aria-label={`Mã QR ${player.name}`}
+                      className={`min-h-[52px] cursor-pointer rounded-tile border px-3 text-xs font-semibold transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring [touch-action:manipulation] ${
+                        isSelected
+                          ? 'border-border-strong bg-primary text-on-primary'
+                          : 'border-border bg-secondary/70 text-secondary-foreground hover:bg-secondary'
+                      }`}
+                    >
+                      QR
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+          </section>
+        </div>
+
+        {/* Right: Clean VietQR Card */}
+        <div className="lg:col-span-5">
+          <section
+            aria-labelledby="qr-heading"
+            className="rounded-block border border-border bg-card p-5 shadow-block"
+          >
+            <div className="flex items-center justify-between">
+              <h2 id="qr-heading" className="text-base font-bold text-card-foreground">
+                {selectedPlayer?.name}
+              </h2>
+              <span className="rounded-pill bg-accent-qr-soft px-2.5 py-0.5 font-mono text-xs font-semibold text-on-accent-qr">
+                VietQR
+              </span>
+            </div>
+
+            <div className="mt-4 flex flex-col items-center rounded-tile bg-secondary/60 p-5">
+              <div className="flex h-48 w-48 items-center justify-center rounded-tile border border-border bg-white p-2.5 shadow-tile">
+                <img
+                  src={vietQrUrl}
+                  alt={`VietQR ${selectedPlayer?.name}`}
+                  width={180}
+                  height={180}
+                  className="h-full w-full object-contain"
+                />
+              </div>
+
+              <p className="mt-4 font-mono text-2xl font-bold text-primary tabular-nums">
+                {formatVnd(selectedDue)}
+              </p>
+            </div>
+
+            <button
+              type="button"
+              onClick={copySyntax}
+              className="mt-4 flex min-h-[46px] w-full cursor-pointer items-center justify-between rounded-tile border border-border bg-secondary/70 px-3.5 py-2.5 text-xs transition-colors duration-200 hover:bg-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring [touch-action:manipulation]"
+            >
+              <span className="font-mono font-semibold text-card-foreground">{transferSyntax}</span>
+              <span className="font-semibold text-primary">{copied ? 'Đã chép' : 'Sao chép'}</span>
+            </button>
+          </section>
+        </div>
+      </main>
+    </div>
   );
 }
