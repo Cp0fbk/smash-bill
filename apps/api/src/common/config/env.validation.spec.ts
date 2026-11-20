@@ -11,6 +11,10 @@ describe('validateEnv', () => {
     expect(env.DATABASE_URL).toBe('postgresql://smashbill:secret@localhost:5432/smashbill');
     expect(env.PORT).toBe(4000);
     expect(env.NODE_ENV).toBe(NodeEnvironment.Development);
+    expect(env.JWT_ACCESS_SECRET).toBe('dev-jwt-access-secret-change-in-production');
+    expect(env.JWT_REFRESH_TTL_DAYS).toBe(30);
+    expect(env.WEB_APP_URL).toBe('http://localhost:3000');
+    expect(env.GOOGLE_CALLBACK_URL).toBe('http://localhost:4000/api/v1/auth/google/callback');
   });
 
   it('throws a clear error message when DATABASE_URL is missing', () => {

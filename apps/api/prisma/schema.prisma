@@ -112,6 +112,7 @@ model User {
   // Relations
   ownedClubs           Club[]              @relation("ClubOwner")
   memberships          ClubMember[]
+  refreshTokens        RefreshToken[]
   createdExpenses      Expense[]           @relation("ExpenseCreator")
   createdLedgerEntries LedgerEntry[]       @relation("LedgerEntryCreator")
   listings             ClassifiedListing[]
@@ -120,6 +121,23 @@ model User {
 
   @@unique([provider, providerId])
   @@index([status])
+}
+
+model RefreshToken {
+  id           String    @id @default(cuid())
+  userId       String
+  tokenHash    String    @unique
+  expiresAt    DateTime
+  revokedAt    DateTime?
+  replacedById String?
+  userAgent    String?
+  createdAt    DateTime  @default(now())
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
 }
 
 model Club {

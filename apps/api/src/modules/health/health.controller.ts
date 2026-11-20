@@ -2,8 +2,10 @@ import { Controller, Get, Inject } from '@nestjs/common';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import type { Clock } from '../../common/clock/clock';
 import { CLOCK } from '../../common/constants/injection-tokens';
+import { Public } from '../auth/decorators/public.decorator';
 
 @ApiTags('health')
+@Public()
 @Controller('health')
 export class HealthController {
   constructor(@Inject(CLOCK) private readonly clock: Clock) {}
