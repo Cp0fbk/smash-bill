@@ -1,8 +1,10 @@
 import { Controller, Get, Param } from '@nestjs/common';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
+import { Public } from '../auth/decorators/public.decorator';
 import { ClubService } from './club.service';
 
 @ApiTags('clubs')
+@Public()
 @Controller('clubs')
 export class ClubController {
   constructor(private readonly clubService: ClubService) {}

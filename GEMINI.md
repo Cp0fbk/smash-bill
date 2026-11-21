@@ -93,6 +93,8 @@ Never commit broken or unformatted code. Before every `git commit`, run:
   - Validate all request payloads with `class-validator` / `class-transformer` DTOs (global `ValidationPipe` has `whitelist: true` and `forbidNonWhitelisted: true`).
   - Wrap multi-table financial/attendance updates in `this.prisma.$transaction(...)`.
 - **Frontend (`apps/web` - Next.js 15 + Tailwind CSS 4 + `ui-ux-pro-max`):**
-  - Follow `design-system/smash-bill/MASTER.md` and the `ui-ux-pro-max` skill (`.agents/skills/ui-ux-pro-max/SKILL.md`) for all UI/UX work.
-  - Mobile-first PWA design: optimize for one-handed court-side use on mobile screens (`min-h-[44px]` touch targets, `cursor-pointer`, high contrast ≥ 4.5:1 in bright indoor court lighting, never disable viewport zoom).
-  - Use vector SVG icons (never raw emojis as structural icons) and apply `tabular-nums` to all VND currency values and counters.
+  - Follow `design-system/smash-bill/MASTER.md`, page overrides (`design-system/smash-bill/pages/*.md`), and the `ui-ux-pro-max` skill (`.agents/skills/ui-ux-pro-max/SKILL.md`) for all UI/UX work.
+  - **Dual-Platform Responsive PWA (Mobile Court-Side + Desktop Command Center):**
+    - **Mobile (`< 1024px`, down to `375px`):** Optimize for one-handed court-side use on phones (`min-h-[44px]` touch targets, `cursor-pointer`, sticky 4-tab bottom navigation dock + floating VietQR quick-jump bar, `pb-28` safe clearance, high contrast ≥ 4.5:1 in bright indoor court lighting, never disable viewport zoom).
+    - **Desktop (`≥ 1024px` up to `1440px` `max-w-7xl`):** Render a multi-column Bento Command Center with a persistent left navigation sidebar (`w-[260px]`), split-screen auth showcase on `/login`, and master-detail workspace (7-col Court Attendance & Expense Board + 5-col Sticky VietQR Inspector) with full keyboard navigation and hover/focus states.
+  - Use vector SVG icons (never raw emojis as structural icons), support both Clean Light Mode (`:root`) and Dark Mode (`.dark`), and apply `tabular-nums` to all VND currency values and counters.

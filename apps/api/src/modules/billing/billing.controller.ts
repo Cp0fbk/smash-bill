@@ -1,8 +1,10 @@
 import { Body, Controller, Post } from '@nestjs/common';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
+import { Public } from '../auth/decorators/public.decorator';
 import { BillingService } from './billing.service';
 
 @ApiTags('billing')
+@Public()
 @Controller('billing')
 export class BillingController {
   constructor(private readonly billingService: BillingService) {}

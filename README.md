@@ -17,13 +17,18 @@ SmashBill helps badminton club admins automate court attendance, calculate sessi
 - **VietQR Smart Checkout (NAPAS Standard):**
   - Members open a summary link with a dynamically generated VietQR code pre-filled with the **Admin's bank account**, **exact debt amount**, and **standardized transfer syntax** (e.g., `SB CLBSAOMAI T10 MINH`).
   - Scan and confirm in any banking app with zero manual typing.
-- **Mobile-First PWA:** Installable directly to iOS/Android home screens with no App Store friction.
+- **Responsive Desktop & Mobile PWA:**
+  - **Mobile Court-Side (`< 1024px`):** One-handed 1-touch attendance rows, floating VietQR quick-jump bar, 4-tab bottom navigation dock, and home-screen PWA installation on iOS/Android.
+  - **Desktop Command Center (`≥ 1024px`):** Multi-column Bento workspace with persistent left sidebar navigation, split-screen `/login` showcase, court expense calculator, and sticky right-hand VietQR & ledger inspector.
+  - **Light & Dark Mode Parity:** Clean Light Mode default (matched to the SmashBill Shuttlecock emblem) with 1-click Dark Mode toggle.
 
-### 🛡️ Phase 1: Badminton Community & Trust Expansion
+### 🛡️ Phase 1 & 2: Discovery, RBAC & Community Trust Expansion
+- **Two-Tier RBAC (API + UI):** Platform-wide `UserRole` (`USER` | `ADMIN`) plus per-club `ClubRole` (`ADMIN` | `MEMBER` | `GUEST`). The UI adapts navigation and actions across **Home (`/`)**, **Matches (`/matches`)**, **Equipment (`/market`)**, and **Clubs & Profile (`/clubs`)**.
+- **Match Discovery & Offloaded Social Crawler:** Players filter open sessions by **skill level** and **location/district**. An external scheduled crawler worker feeds deduplicated social-media match posts into an `ADMIN` ingestion API alongside native SmashBill club matches.
 - **Mandatory SSO Authentication:** Google (Gmail) & Zalo SSO only—eliminating email/password bots and fake accounts.
 - **Drop-in / Guest Anti-Flaking System:**
   - View a guest player's flake rate and skill rating before approving a slot.
-  - Automatic VietQR deposit generation (e.g., `50,000 VND`) before slot confirmation.
+  - Automatic VietQR deposit generation (e.g., `50,000 VND`) before slot confirmation on native club matches.
 - **Badminton Gear Classifieds (Pass Đồ Cầu Lông):**
   - Peer-to-peer listings for rackets, shoes, bags, and accessories with direct Zalo/phone contact and seller trust ratings (👍 / 👎).
 - **Report & Blacklist Engine:**
@@ -39,7 +44,7 @@ SmashBill helps badminton club admins automate court attendance, calculate sessi
 | **Monorepo** | `pnpm` Workspaces | Fast, disk-efficient package management across `apps/*` |
 | **Backend API** | **NestJS 11** (TypeScript) | Modular architecture, low memory footprint, strict validation |
 | **Database & ORM** | **PostgreSQL 16 + Prisma** | Type-safe database queries, migrations, and relational integrity |
-| **Frontend** | **Next.js 15 + Tailwind CSS 4** | SEO-friendly, mobile-first UI, native Web App Manifest (PWA) |
+| **Frontend** | **Next.js 15 + Tailwind CSS 4** | Responsive Desktop & Mobile PWA (`Minimalism & Swiss Style` Design System) |
 | **Code Quality** | **Biome (`biome.json`)** | Ultra-fast Rust-based linter & formatter replacing ESLint + Prettier |
 | **Infrastructure** | **Docker + GitHub Actions** | Pre-built container images for low-RAM VPS + Nginx Reverse Proxy |
 
