@@ -1,40 +1,13 @@
 'use client';
 
-import type { AuthUserProfile } from '@smash-bill/shared';
 import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
-import { fetchCurrentUser, logoutUser } from '../lib/api-client';
+import { useState } from 'react';
+import { useCurrentUser } from '../lib/auth-context';
 
 export function UserSessionBar() {
   const router = useRouter();
-  const [user, setUser] = useState<AuthUserProfile | null>(null);
-  const [loading, setLoading] = useState(true);
+  const { user, loading, logout } = useCurrentUser();
   const [loggingOut, setLoggingOut] = useState(false);
-
-  useEffect(() => {
-    let active = true;
-
-    fetchCurrentUser()
-      .then((profile) => {
-        if (active) {
-          setUser(profile);
-        }
-      })
-      .catch(() => {
-        if (active) {
-          setUser(null);
-        }
-      })
-      .finally(() => {
-        if (active) {
-          setLoading(false);
-        }
-      });
-
-    return () => {
-      active = false;
-    };
-  }, []);
 
   async function handleLogout() {
     if (loggingOut) {
@@ -42,9 +15,7 @@ export function UserSessionBar() {
     }
     setLoggingOut(true);
     try {
-      await logoutUser();
-    } catch {
-      // Clear client state and navigate to login even if cookie already expired
+      await logout();
     } finally {
       router.push('/login');
       router.refresh();
@@ -97,9 +68,14 @@ export function UserSessionBar() {
             {initials || 'SB'}
           </span>
         )}
-        <span className="max-w-[200px] truncate text-xs font-semibold text-card-foreground sm:max-w-[160px]">
+        <span className="max-w-[160px] truncate text-xs font-semibold text-card-foreground">
           {user.name}
         </span>
+        {user.role === 'ADMIN' && (
+          <span className="rounded-pill bg-primary-soft px-2 py-0.5 font-mono text-[10px] font-bold text-primary">
+            ADMIN
+          </span>
+        )}
       </div>
 
       <button
