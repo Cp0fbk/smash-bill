@@ -110,6 +110,8 @@ export const VN_BANKS: readonly VnBank[] = [
   },
 ] as const;
 
+export const BANKS = VN_BANKS;
+
 export function findBankByBin(bin: string): VnBank | undefined {
   return VN_BANKS.find((bank) => bank.bin === bin);
 }

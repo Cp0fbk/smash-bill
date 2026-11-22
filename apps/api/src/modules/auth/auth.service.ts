@@ -3,12 +3,15 @@ import {
   BadRequestException,
   ForbiddenException,
   Injectable,
+  Optional,
   UnauthorizedException,
 } from '@nestjs/common';
-import { AccountStatus, type User } from '@prisma/client';
+import { ConfigService } from '@nestjs/config';
+import { AccountStatus, type User, UserRole } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import { OAuthProviderRegistry } from './providers/oauth-provider.registry';
 import { TokenService } from './token.service';
+import { isConfiguredPlatformAdminEmail } from './utils/admin-email';
 
 export interface LoginWithProviderInput {
   providerName: string;
@@ -40,7 +43,12 @@ export class AuthService {
     private readonly prisma: PrismaService,
     private readonly providerRegistry: OAuthProviderRegistry,
     private readonly tokenService: TokenService,
+    @Optional() private readonly configService?: ConfigService,
   ) {}
+
+  private isConfiguredAdminEmail(email: string | null | undefined): boolean {
+    return isConfiguredPlatformAdminEmail(email, this.configService);
+  }
 
   getSupportedProviders() {
     return {
@@ -99,6 +107,8 @@ export class AuthService {
       codeVerifier: cookiePayload.codeVerifier,
     });
 
+    const shouldBeAdmin = this.isConfiguredAdminEmail(profile.email);
+
     const user = await this.prisma.user.upsert({
       where: {
         provider_providerId: {
@@ -110,10 +120,12 @@ export class AuthService {
         name: profile.name,
         avatarUrl: profile.avatarUrl ?? null,
         ...(profile.email !== undefined ? { email: profile.email } : {}),
+        ...(shouldBeAdmin ? { role: UserRole.ADMIN } : {}),
       },
       create: {
         provider: profile.provider,
         providerId: profile.providerId,
+        role: shouldBeAdmin ? UserRole.ADMIN : UserRole.USER,
         email: profile.email ?? null,
         name: profile.name,
         avatarUrl: profile.avatarUrl ?? null,
@@ -160,7 +172,7 @@ export class AuthService {
   }
 
   async getProfile(userId: string) {
-    const user = await this.prisma.user.findUnique({
+    let user = await this.prisma.user.findUnique({
       where: { id: userId },
     });
 
@@ -178,15 +190,24 @@ export class AuthService {
       });
     }
 
+    if (user.role !== UserRole.ADMIN && this.isConfiguredAdminEmail(user.email)) {
+      user = await this.prisma.user.update({
+        where: { id: user.id },
+        data: { role: UserRole.ADMIN },
+      });
+    }
+
     return {
       id: user.id,
       provider: user.provider,
       providerId: user.providerId,
+      role: user.role,
       email: user.email,
       name: user.name,
       phone: user.phone,
       avatarUrl: user.avatarUrl,
       skillLevel: user.skillLevel,
+      preferredCity: user.preferredCity,
       status: user.status,
       shadowbanUntil: user.shadowbanUntil,
       flakeCount: user.flakeCount,

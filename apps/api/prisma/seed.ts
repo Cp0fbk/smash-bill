@@ -53,7 +53,7 @@ export async function seedDatabase(prisma: PrismaClient) {
   await prisma.classifiedListing.deleteMany();
   await prisma.user.deleteMany();
 
-  // 1. Create Admin user + 6 registered regular users
+  // 1. Create Club Owner user (UserRole = USER, ClubRole = ADMIN) + 6 registered regular users
   const adminUser = await prisma.user.create({
     data: {
       provider: AuthProvider.GOOGLE,
@@ -62,6 +62,7 @@ export async function seedDatabase(prisma: PrismaClient) {
       name: 'Nguyễn Minh Quân',
       phone: '0901234567',
       skillLevel: 'Kha',
+      preferredCity: 'TP.HCM',
     },
   });
 

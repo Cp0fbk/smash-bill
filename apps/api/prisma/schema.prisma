@@ -21,6 +21,11 @@ enum AuthProvider {
   ZALO
 }
 
+enum UserRole {
+  USER
+  ADMIN
+}
+
 enum AccountStatus {
   ACTIVE
   SHADOWBANNED
@@ -95,11 +100,13 @@ model User {
   id             String        @id @default(cuid())
   provider       AuthProvider
   providerId     String
+  role           UserRole      @default(USER)
   email          String?       @unique
   name           String
   phone          String?
   avatarUrl      String?
   skillLevel     String?       // e.g., TB-, TB, TB+, Kha
+  preferredCity  String?       // e.g., TP.HCM, Ha Noi, Da Nang
   flakeCount     Int           @default(0)
   totalMatches   Int           @default(0)
   thumbsUp       Int           @default(0)

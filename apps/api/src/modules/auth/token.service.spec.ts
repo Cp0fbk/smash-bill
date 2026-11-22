@@ -1,6 +1,12 @@
 import { UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { AccountStatus, AuthProvider, type RefreshToken, type User } from '@prisma/client';
+import {
+  AccountStatus,
+  AuthProvider,
+  type RefreshToken,
+  type User,
+  UserRole,
+} from '@prisma/client';
 import { beforeEach, describe, expect, it } from 'vitest';
 import type { Clock } from '../../common/clock/clock';
 import type { PrismaService } from '../../prisma/prisma.service';
@@ -102,11 +108,13 @@ describe('TokenService', () => {
     id: 'user_minh_01',
     provider: AuthProvider.GOOGLE,
     providerId: 'google-sub-minh',
+    role: UserRole.USER,
     email: 'minh@saomai.club',
     name: 'Minh Nguyen',
     phone: null,
     avatarUrl: 'https://example.com/minh.png',
     skillLevel: 'Kha',
+    preferredCity: 'TP.HCM',
     flakeCount: 0,
     totalMatches: 12,
     thumbsUp: 5,
