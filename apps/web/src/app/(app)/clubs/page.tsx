@@ -8,9 +8,9 @@ import { useClubPermissions, useCurrentUser } from '../../../lib/auth-context';
 
 function getRoleBadge(role: ClubRole): { label: string; className: string } {
   switch (role) {
-    case 'ADMIN':
+    case 'HOST':
       return {
-        label: 'Chủ CLB • ADMIN',
+        label: 'Chủ CLB • HOST',
         className: 'bg-primary-soft text-primary border-border-strong/30',
       };
     case 'MEMBER':
@@ -200,7 +200,7 @@ export default function ClubsPage() {
         >
           {clubs.map((club) => {
             const badge = getRoleBadge(club.myRole);
-            const canManageClub = club.myRole === 'ADMIN';
+            const canManageClub = club.myRole === 'HOST';
 
             return (
               <article

@@ -109,7 +109,7 @@ describe('ClubRoleGuard & RolesGuard', () => {
     expect(request.clubMembership).toEqual(membership);
   });
 
-  it('throws 403 INSUFFICIENT_CLUB_ROLE when a MEMBER accesses a @ClubRoles(ClubRole.ADMIN) endpoint', async () => {
+  it('throws 403 INSUFFICIENT_CLUB_ROLE when a MEMBER accesses a @ClubRoles(ClubRole.HOST) endpoint', async () => {
     memberships.set('club_1:usr_1', {
       id: 'cm_1',
       clubId: 'club_1',
@@ -120,24 +120,24 @@ describe('ClubRoleGuard & RolesGuard', () => {
       publicToken: 'tok_mem_1',
       isActive: true,
     });
-    requiredClubRoles = [ClubRole.ADMIN];
+    requiredClubRoles = [ClubRole.HOST];
 
     const { context } = createMockContext({ user: sampleUser, clubId: 'club_1' });
     await expect(clubRoleGuard.canActivate(context)).rejects.toThrowError(ForbiddenException);
   });
 
-  it('allows Club ADMIN on @ClubRoles(ClubRole.ADMIN) endpoint', async () => {
+  it('allows Club HOST on @ClubRoles(ClubRole.HOST) endpoint', async () => {
     memberships.set('club_1:usr_1', {
       id: 'cm_1',
       clubId: 'club_1',
       userId: sampleUser.id,
-      displayName: 'Admin User',
+      displayName: 'Host User',
       phone: null,
-      role: ClubRole.ADMIN,
+      role: ClubRole.HOST,
       publicToken: 'tok_adm_1',
       isActive: true,
     });
-    requiredClubRoles = [ClubRole.ADMIN];
+    requiredClubRoles = [ClubRole.HOST];
 
     const { context } = createMockContext({ user: sampleUser, clubId: 'club_1' });
     expect(await clubRoleGuard.canActivate(context)).toBe(true);

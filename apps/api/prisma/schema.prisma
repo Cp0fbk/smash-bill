@@ -37,7 +37,7 @@ enum Sport {
 }
 
 enum ClubRole {
-  ADMIN
+  HOST
   MEMBER
   GUEST
 }

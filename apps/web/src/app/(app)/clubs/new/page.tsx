@@ -397,7 +397,7 @@ export default function CreateClubPage() {
                 Xem trước thẻ CLB
               </span>
               <span className="rounded-pill bg-primary-soft px-2.5 py-0.5 text-xs font-semibold text-primary">
-                Chủ CLB • ADMIN
+                Chủ CLB • HOST
               </span>
             </div>
 

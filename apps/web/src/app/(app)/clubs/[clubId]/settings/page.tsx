@@ -141,12 +141,12 @@ export default function ClubSettingsPage() {
     );
   }
 
-  // UI RBAC Gate: Only ClubRole.ADMIN can access /clubs/[clubId]/settings
+  // UI RBAC Gate: Only ClubRole.HOST can access /clubs/[clubId]/settings
   if (!canManageClub) {
     return (
       <ForbiddenState
         title="403 • Chỉ Chủ CLB mới có quyền cài đặt"
-        description={`Bạn đang là ${club.myRole} tại "${club.name}". Chỉ Chủ CLB (ADMIN) mới có thể chỉnh sửa thông tin sân, tài khoản VietQR và mã mời.`}
+        description={`Bạn đang là ${club.myRole} tại "${club.name}". Chỉ Chủ CLB (HOST) mới có thể chỉnh sửa thông tin sân, tài khoản VietQR và mã mời.`}
         backHref={`/clubs/${club.id}`}
         backLabel="Quay lại trang CLB"
       />
@@ -283,7 +283,7 @@ export default function ClubSettingsPage() {
           </h1>
         </div>
         <span className="self-start rounded-pill bg-primary-soft px-3 py-1 text-xs font-semibold text-primary sm:self-auto">
-          Chủ CLB • ADMIN
+          Chủ CLB • HOST
         </span>
       </div>
 

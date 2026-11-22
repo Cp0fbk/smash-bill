@@ -62,16 +62,16 @@ export class ClubController {
 
   @Patch(':clubId')
   @UseGuards(ClubRoleGuard)
-  @ClubRoles(ClubRole.ADMIN)
-  @ApiOperation({ summary: 'Update club info (requires Club ADMIN)' })
+  @ClubRoles(ClubRole.HOST)
+  @ApiOperation({ summary: 'Update club info (requires Club HOST)' })
   updateClub(@Param('clubId') clubId: string, @Body() dto: UpdateClubDto) {
     return this.updateClubService.execute(clubId, dto);
   }
 
   @Put(':clubId/bank-account')
   @UseGuards(ClubRoleGuard)
-  @ClubRoles(ClubRole.ADMIN)
-  @ApiOperation({ summary: 'Configure club VietQR bank account (requires Club ADMIN)' })
+  @ClubRoles(ClubRole.HOST)
+  @ApiOperation({ summary: 'Configure club VietQR bank account (requires Club HOST)' })
   updateBankAccount(@Param('clubId') clubId: string, @Body() dto: UpdateBankAccountDto) {
     return this.updateBankAccountService.execute(clubId, dto);
   }
@@ -79,8 +79,8 @@ export class ClubController {
   @Post(':clubId/tokens/rotate')
   @HttpCode(HttpStatus.OK)
   @UseGuards(ClubRoleGuard)
-  @ClubRoles(ClubRole.ADMIN)
-  @ApiOperation({ summary: 'Regenerate club inviteCode and/or publicToken (requires Club ADMIN)' })
+  @ClubRoles(ClubRole.HOST)
+  @ApiOperation({ summary: 'Regenerate club inviteCode and/or publicToken (requires Club HOST)' })
   rotateTokens(@Param('clubId') clubId: string, @Body() dto?: RotateClubTokensDto) {
     return this.rotateClubTokensService.execute(clubId, dto);
   }

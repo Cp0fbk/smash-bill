@@ -29,6 +29,6 @@ export class RotateClubTokensService {
       ...(publicToken ? { publicToken } : {}),
     });
 
-    return toClubSummaryDto(updated, ClubRole.ADMIN);
+    return toClubSummaryDto(updated, ClubRole.HOST);
   }
 }

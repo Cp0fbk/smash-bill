@@ -38,6 +38,6 @@ export class UpdateClubService {
       ...(dto.defaultCourtFee !== undefined ? { defaultCourtFee: dto.defaultCourtFee } : {}),
     });
 
-    return toClubSummaryDto(updated, ClubRole.ADMIN);
+    return toClubSummaryDto(updated, ClubRole.HOST);
   }
 }

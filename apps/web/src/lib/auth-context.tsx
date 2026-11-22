@@ -111,10 +111,10 @@ export function useClubPermissions(myRole?: ClubRole | null): ClubPermissions {
   return useMemo<ClubPermissions>(
     () => ({
       myRole: normalizedRole,
-      canManageClub: normalizedRole === 'ADMIN',
-      canManageMatches: normalizedRole === 'ADMIN',
+      canManageClub: normalizedRole === 'HOST',
+      canManageMatches: normalizedRole === 'HOST',
       isClubMember:
-        normalizedRole === 'ADMIN' || normalizedRole === 'MEMBER' || normalizedRole === 'GUEST',
+        normalizedRole === 'HOST' || normalizedRole === 'MEMBER' || normalizedRole === 'GUEST',
       isPlatformAdmin: user?.role === 'ADMIN',
     }),
     [normalizedRole, user?.role],

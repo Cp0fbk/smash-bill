@@ -78,7 +78,7 @@ export class PrismaClubRepository implements ClubRepository {
               userId: input.ownerId,
               displayName: input.ownerDisplayName,
               phone: input.ownerPhone,
-              role: ClubRole.ADMIN,
+              role: ClubRole.HOST,
               publicToken: input.adminMemberPublicToken,
               isActive: true,
             },
@@ -97,7 +97,7 @@ export class PrismaClubRepository implements ClubRepository {
 
       return {
         club: mapClubRecord(createdClub),
-        myRole: ClubRole.ADMIN,
+        myRole: ClubRole.HOST,
       };
     });
   }

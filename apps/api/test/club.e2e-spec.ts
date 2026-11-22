@@ -95,7 +95,7 @@ describe('Club Management, Bank Account & Role Guard Matrix E2E', () => {
       slug: 'clb-sao-mai',
       location: 'Sân Sao Mai, Phú Nhuận, TP.HCM',
       defaultCourtFee: 240000,
-      myRole: 'ADMIN',
+      myRole: 'HOST',
       memberCount: 1,
     });
     expect(createRes1.body.inviteCode).toMatch(/^[A-Z0-9]{8}$/);

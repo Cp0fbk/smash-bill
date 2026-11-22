@@ -11,7 +11,7 @@ interface ForbiddenStateProps {
 
 export function ForbiddenState({
   title = '403 • Không đủ quyền truy cập',
-  description = 'Tính năng này chỉ dành cho Chủ CLB (Club ADMIN) hoặc Quản trị viên hệ thống.',
+  description = 'Tính năng này chỉ dành cho Chủ CLB (Club HOST) hoặc Quản trị viên hệ thống.',
   backHref = '/clubs',
   backLabel = 'Quay lại danh sách CLB',
 }: ForbiddenStateProps) {

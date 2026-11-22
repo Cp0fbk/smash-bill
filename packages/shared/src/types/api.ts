@@ -1,5 +1,5 @@
 export type UserRole = 'USER' | 'ADMIN';
-export type ClubRole = 'ADMIN' | 'MEMBER' | 'GUEST';
+export type ClubRole = 'HOST' | 'MEMBER' | 'GUEST';
 export type AccountStatusType = 'ACTIVE' | 'SHADOWBANNED' | 'BANNED';
 export type AuthProviderType = 'GOOGLE' | 'ZALO';
 

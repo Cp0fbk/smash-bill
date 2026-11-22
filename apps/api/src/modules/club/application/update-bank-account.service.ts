@@ -31,6 +31,6 @@ export class UpdateBankAccountService {
       bankAccountName: normalizedName,
     });
 
-    return toClubSummaryDto(updated, ClubRole.ADMIN);
+    return toClubSummaryDto(updated, ClubRole.HOST);
   }
 }
