@@ -11,7 +11,12 @@ function isPublicRoute(pathname: string): boolean {
   if (STATIC_ASSET_REGEX.test(pathname)) {
     return true;
   }
-  if (pathname.startsWith('/p/')) {
+  if (
+    pathname.startsWith('/p/') ||
+    pathname.startsWith('/pay/') ||
+    pathname.startsWith('/s/') ||
+    pathname.startsWith('/join/')
+  ) {
     return true;
   }
   return false;

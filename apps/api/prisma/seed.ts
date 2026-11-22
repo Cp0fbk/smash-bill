@@ -53,7 +53,7 @@ export async function seedDatabase(prisma: PrismaClient) {
   await prisma.classifiedListing.deleteMany();
   await prisma.user.deleteMany();
 
-  // 1. Create Admin user + 6 registered regular users
+  // 1. Create Club Owner user (UserRole = USER, ClubRole = HOST) + 6 registered regular users
   const adminUser = await prisma.user.create({
     data: {
       provider: AuthProvider.GOOGLE,
@@ -62,6 +62,7 @@ export async function seedDatabase(prisma: PrismaClient) {
       name: 'Nguyễn Minh Quân',
       phone: '0901234567',
       skillLevel: 'Kha',
+      preferredCity: 'TP.HCM',
     },
   });
 
@@ -144,7 +145,7 @@ export async function seedDatabase(prisma: PrismaClient) {
   });
 
   // 3. Create 12 ClubMembers:
-  // - 1 ADMIN (linked to adminUser)
+  // - 1 HOST (linked to adminUser)
   // - 6 MEMBER regulars (linked to registeredUsers)
   // - 2 MEMBER regulars with userId = null (Single-Player First ADR-001)
   // - 3 GUEST players with userId = null
@@ -154,7 +155,7 @@ export async function seedDatabase(prisma: PrismaClient) {
       userId: adminUser.id,
       displayName: adminUser.name,
       phone: adminUser.phone,
-      role: ClubRole.ADMIN,
+      role: ClubRole.HOST,
       publicToken: 'mem_saomai_admin_00001',
     },
   });

@@ -6,12 +6,13 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
-import { AccountStatus } from '@prisma/client';
+import { AccountStatus, UserRole } from '@prisma/client';
 import type { Request } from 'express';
 import { PrismaService } from '../../../prisma/prisma.service';
 import type { AuthenticatedUser } from '../decorators/current-user.decorator';
 import { IS_PUBLIC_KEY } from '../decorators/public.decorator';
 import { TokenService } from '../token.service';
+import { isConfiguredPlatformAdminEmail } from '../utils/admin-email';
 import { ACCESS_COOKIE_NAME, getCookie } from '../utils/cookies';
 
 @Injectable()
@@ -49,6 +50,8 @@ export class JwtAuthGuard implements CanActivate {
       select: {
         id: true,
         provider: true,
+        email: true,
+        role: true,
         status: true,
       },
     });
@@ -67,9 +70,19 @@ export class JwtAuthGuard implements CanActivate {
       });
     }
 
+    let effectiveRole = user.role;
+    if (effectiveRole !== UserRole.ADMIN && isConfiguredPlatformAdminEmail(user.email)) {
+      await this.prisma.user.update({
+        where: { id: user.id },
+        data: { role: UserRole.ADMIN },
+      });
+      effectiveRole = UserRole.ADMIN;
+    }
+
     request.user = {
       id: user.id,
       provider: user.provider,
+      role: effectiveRole,
       status: user.status,
     };
 

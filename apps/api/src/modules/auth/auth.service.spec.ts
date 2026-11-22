@@ -1,6 +1,6 @@
 import { BadRequestException, ForbiddenException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { AccountStatus, AuthProvider, type User } from '@prisma/client';
+import { AccountStatus, AuthProvider, type User, UserRole } from '@prisma/client';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { SystemClock } from '../../common/clock/clock';
 import type { PrismaService } from '../../prisma/prisma.service';
@@ -64,11 +64,13 @@ describe('AuthService', () => {
             id: `usr_${usersByProviderKey.size + 1}`,
             provider: create.provider,
             providerId: create.providerId,
+            role: create.role ?? UserRole.USER,
             email: create.email ?? null,
             name: create.name,
             phone: null,
             avatarUrl: create.avatarUrl ?? null,
             skillLevel: null,
+            preferredCity: null,
             flakeCount: 0,
             totalMatches: 0,
             thumbsUp: 0,
@@ -96,10 +98,26 @@ describe('AuthService', () => {
     const config = new ConfigService({
       JWT_ACCESS_SECRET: 'test-access-secret-key',
       JWT_REFRESH_TTL_DAYS: 30,
+      ADMIN_EMAIL: 'admin@saomai.club',
     });
     const registry = new OAuthProviderRegistry([provider]);
     const tokenService = new TokenService(prisma, config, new SystemClock());
-    authService = new AuthService(prisma, registry, tokenService);
+    authService = new AuthService(prisma, registry, tokenService, config);
+  });
+
+  it('auto-promotes user to UserRole.ADMIN when email matches ADMIN_EMAIL in env', async () => {
+    const start = authService.beginOAuthLogin('google');
+    const state = new URL(start.authorizationUrl).searchParams.get('state') ?? '';
+
+    const session = await authService.loginWithProvider({
+      providerName: 'google',
+      code: 'admin-code-1',
+      state,
+      oauthCookieValue: start.oauthCookieValue,
+    });
+
+    expect(session.user.email).toBe('admin@saomai.club');
+    expect(session.user.role).toBe(UserRole.ADMIN);
   });
 
   it('upserts user without email and updates name/avatar on subsequent logins', async () => {
@@ -151,11 +169,13 @@ describe('AuthService', () => {
       id: 'usr_banned_1',
       provider: AuthProvider.GOOGLE,
       providerId: 'google-sub-100',
+      role: UserRole.USER,
       email: 'banned@saomai.club',
       name: 'Banned User',
       phone: null,
       avatarUrl: null,
       skillLevel: null,
+      preferredCity: null,
       flakeCount: 5,
       totalMatches: 5,
       thumbsUp: 0,

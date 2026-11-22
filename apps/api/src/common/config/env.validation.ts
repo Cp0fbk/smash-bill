@@ -61,6 +61,10 @@ export class EnvironmentVariables {
 
   @IsString()
   @IsOptional()
+  ADMIN_EMAIL?: string;
+
+  @IsString()
+  @IsOptional()
   GOOGLE_CLIENT_ID?: string;
 
   @IsString()

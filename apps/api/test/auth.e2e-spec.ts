@@ -144,8 +144,10 @@ describe('Auth SSO, Rotating Refresh Tokens & /me E2E', () => {
     expect(meRes.body).toMatchObject({
       provider: 'GOOGLE',
       providerId: 'google-e2e-sub-001',
+      role: 'USER',
       email: 'minh.admin@saomai.club',
       name: 'Minh Nguyen (Admin)',
+      preferredCity: null,
       status: 'ACTIVE',
     });
 

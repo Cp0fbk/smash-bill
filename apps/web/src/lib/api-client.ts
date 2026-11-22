@@ -1,4 +1,13 @@
-import type { ApiError, AuthUserProfile } from '@smash-bill/shared';
+import type {
+  ApiError,
+  AuthUserProfile,
+  ClubDetail,
+  ClubSummary,
+  CreateClubPayload,
+  RotateClubTokensPayload,
+  UpdateBankAccountPayload,
+  UpdateClubPayload,
+} from '@smash-bill/shared';
 
 export const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api/v1';
 
@@ -108,5 +117,47 @@ export function fetchCurrentUser(): Promise<AuthUserProfile> {
 export function logoutUser(): Promise<{ status: string }> {
   return apiFetch<{ status: string }>('/auth/logout', {
     method: 'POST',
+  });
+}
+
+export function fetchMyClubs(): Promise<ClubSummary[]> {
+  return apiFetch<ClubSummary[]>('/clubs');
+}
+
+export function fetchClubById(clubId: string): Promise<ClubDetail> {
+  return apiFetch<ClubDetail>(`/clubs/${encodeURIComponent(clubId)}`);
+}
+
+export function createClub(payload: CreateClubPayload): Promise<ClubSummary> {
+  return apiFetch<ClubSummary>('/clubs', {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
+}
+
+export function updateClub(clubId: string, payload: UpdateClubPayload): Promise<ClubDetail> {
+  return apiFetch<ClubDetail>(`/clubs/${encodeURIComponent(clubId)}`, {
+    method: 'PATCH',
+    body: JSON.stringify(payload),
+  });
+}
+
+export function updateClubBankAccount(
+  clubId: string,
+  payload: UpdateBankAccountPayload,
+): Promise<ClubDetail> {
+  return apiFetch<ClubDetail>(`/clubs/${encodeURIComponent(clubId)}/bank-account`, {
+    method: 'PUT',
+    body: JSON.stringify(payload),
+  });
+}
+
+export function rotateClubTokens(
+  clubId: string,
+  payload: RotateClubTokensPayload = { rotateInviteCode: true, rotatePublicToken: true },
+): Promise<ClubDetail> {
+  return apiFetch<ClubDetail>(`/clubs/${encodeURIComponent(clubId)}/tokens/rotate`, {
+    method: 'POST',
+    body: JSON.stringify(payload),
   });
 }
