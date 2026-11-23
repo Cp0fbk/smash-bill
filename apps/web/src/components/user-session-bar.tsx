@@ -34,7 +34,7 @@ export function UserSessionBar() {
   if (!user) {
     return (
       <a
-        href="/login"
+        href="/login?reauth=1"
         className="inline-flex min-h-[44px] cursor-pointer items-center gap-2 rounded-tile bg-primary px-4 py-2 text-xs font-semibold text-on-primary shadow-tile transition-colors duration-200 hover:bg-primary-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring motion-reduce:transition-none [touch-action:manipulation]"
       >
         <span>Đăng nhập</span>

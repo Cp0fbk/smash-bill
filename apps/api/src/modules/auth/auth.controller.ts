@@ -13,9 +13,9 @@ import { ConfigService } from '@nestjs/config';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import type { Request, Response } from 'express';
 import { AuthService } from './auth.service';
-import { type AuthenticatedUser, CurrentUser } from './decorators/current-user.decorator';
 import { Public } from './decorators/public.decorator';
 import {
+  ACCESS_COOKIE_NAME,
   OAUTH_COOKIE_NAME,
   REFRESH_COOKIE_NAME,
   clearOAuthStateCookie,
@@ -109,38 +109,45 @@ export class AuthController {
     const userAgent =
       typeof req.headers['user-agent'] === 'string' ? req.headers['user-agent'] : undefined;
 
-    const rotated = await this.authService.refreshSession(rawRefreshToken, userAgent);
+    try {
+      const rotated = await this.authService.refreshSession(rawRefreshToken, userAgent);
 
-    setSessionCookies(
-      res,
-      {
-        accessToken: rotated.accessToken,
-        refreshToken: rotated.refreshToken,
-        refreshMaxAgeMs: rotated.refreshMaxAgeMs,
-      },
-      this.isProd,
-    );
+      setSessionCookies(
+        res,
+        {
+          accessToken: rotated.accessToken,
+          refreshToken: rotated.refreshToken,
+          refreshMaxAgeMs: rotated.refreshMaxAgeMs,
+        },
+        this.isProd,
+      );
 
-    return {
-      status: 'ok',
-    };
+      return {
+        status: 'ok',
+      };
+    } catch (error) {
+      clearSessionCookies(res, this.isProd);
+      throw error;
+    }
   }
 
+  @Public()
   @Post('logout')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Revoke refresh token server-side and clear session cookies' })
-  async logout(
-    @CurrentUser() user: AuthenticatedUser,
-    @Req() req: Request,
-    @Res({ passthrough: true }) res: Response,
-  ) {
+  async logout(@Req() req: Request, @Res({ passthrough: true }) res: Response) {
     const rawRefreshToken = getCookie(req, REFRESH_COOKIE_NAME);
-    await this.authService.logout({
-      rawRefreshToken,
-      userId: user.id,
-    });
+    const rawAccessToken = getCookie(req, ACCESS_COOKIE_NAME);
+    const userId = this.authService.tryExtractUserId(rawAccessToken);
 
-    clearSessionCookies(res, this.isProd);
+    try {
+      await this.authService.logout({
+        rawRefreshToken,
+        userId,
+      });
+    } finally {
+      clearSessionCookies(res, this.isProd);
+    }
 
     return {
       status: 'ok',

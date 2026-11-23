@@ -27,14 +27,25 @@ function getRoleBadge(role: ClubRole): { label: string; className: string } {
 }
 
 export default function ClubsPage() {
-  const { user } = useCurrentUser();
+  const { user, loading: authLoading } = useCurrentUser();
   const { isPlatformAdmin } = useClubPermissions();
   const [clubs, setClubs] = useState<ClubSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    if (authLoading) {
+      return;
+    }
+    if (!user) {
+      setClubs([]);
+      setError(null);
+      setLoading(false);
+      return;
+    }
+
     let active = true;
+    setLoading(true);
     fetchMyClubs()
       .then((items) => {
         if (active) {
@@ -60,7 +71,7 @@ export default function ClubsPage() {
     return () => {
       active = false;
     };
-  }, []);
+  }, [authLoading, user]);
 
   return (
     <div className="space-y-6">
@@ -128,7 +139,7 @@ export default function ClubsPage() {
       )}
 
       {/* Loading Skeleton */}
-      {loading ? (
+      {loading || authLoading ? (
         <div
           aria-label="Đang tải danh sách CLB"
           className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3"
@@ -140,6 +151,50 @@ export default function ClubsPage() {
             />
           ))}
         </div>
+      ) : !user ? (
+        <section
+          aria-labelledby="guest-clubs-heading"
+          className="rounded-block border border-dashed border-border-strong/50 bg-card p-8 text-center shadow-block sm:p-10"
+        >
+          <h2 id="guest-clubs-heading" className="text-lg font-bold text-card-foreground">
+            Bạn đang truy cập với tư cách Khách (Guest)
+          </h2>
+          <p className="mx-auto mt-1.5 max-w-md text-xs text-muted-foreground sm:text-sm">
+            Khách vãng lai có thể tự ghi danh qua mã QR (/join/...) hoặc thanh toán VietQR
+            (/pay/...) không cần tài khoản. Để tạo hoặc quản lý CLB cố định của bạn, vui lòng đăng
+            nhập bằng Google.
+          </p>
+          <div className="mt-6 flex justify-center">
+            <a
+              href="/login?reauth=1&next=/clubs"
+              className="inline-flex min-h-[46px] cursor-pointer items-center gap-2 rounded-tile bg-primary px-6 py-3 text-sm font-semibold text-on-primary shadow-cta transition-colors duration-200 hover:bg-primary-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring [touch-action:manipulation]"
+            >
+              <span>Đăng nhập Google ngay</span>
+            </a>
+          </div>
+        </section>
+      ) : !user ? (
+        <section
+          aria-labelledby="guest-clubs-heading"
+          className="rounded-block border border-dashed border-border-strong/50 bg-card p-8 text-center shadow-block sm:p-10"
+        >
+          <h2 id="guest-clubs-heading" className="text-lg font-bold text-card-foreground">
+            Bạn đang truy cập với tư cách Khách (Guest)
+          </h2>
+          <p className="mx-auto mt-1.5 max-w-md text-xs text-muted-foreground sm:text-sm">
+            Khách vãng lai có thể tự ghi danh qua mã QR (/join/...) hoặc thanh toán VietQR
+            (/pay/...) không cần tài khoản. Để tạo hoặc quản lý CLB cố định của bạn, vui lòng đăng
+            nhập bằng Google.
+          </p>
+          <div className="mt-6 flex justify-center">
+            <a
+              href="/login?reauth=1&next=/clubs"
+              className="inline-flex min-h-[46px] cursor-pointer items-center gap-2 rounded-tile bg-primary px-6 py-3 text-sm font-semibold text-on-primary shadow-cta transition-colors duration-200 hover:bg-primary-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring [touch-action:manipulation]"
+            >
+              <span>Đăng nhập Google ngay</span>
+            </a>
+          </div>
+        </section>
       ) : clubs.length === 0 ? (
         /* Empty State for First-Time Admins */
         <section
@@ -261,7 +316,14 @@ export default function ClubsPage() {
                     href={`/clubs/${club.id}`}
                     className="flex min-h-[44px] flex-1 cursor-pointer items-center justify-center rounded-tile border border-border bg-secondary/70 px-3 py-2 text-xs font-semibold text-secondary-foreground transition-colors duration-200 hover:bg-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring [touch-action:manipulation]"
                   >
-                    Chi tiết CLB
+                    Chi tiết
+                  </Link>
+
+                  <Link
+                    href={`/clubs/${club.id}/members`}
+                    className="flex min-h-[44px] flex-1 cursor-pointer items-center justify-center rounded-tile border border-border-strong bg-primary-soft px-3 py-2 text-xs font-semibold text-primary transition-colors duration-200 hover:bg-primary hover:text-on-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring [touch-action:manipulation]"
+                  >
+                    Thành viên &amp; QR
                   </Link>
 
                   {canManageClub && (
@@ -269,7 +331,7 @@ export default function ClubsPage() {
                       href={`/clubs/${club.id}/settings`}
                       className="flex min-h-[44px] flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-tile bg-primary px-3 py-2 text-xs font-semibold text-on-primary shadow-tile transition-colors duration-200 hover:bg-primary-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring [touch-action:manipulation]"
                     >
-                      <span>Cài đặt &amp; VietQR</span>
+                      <span>VietQR</span>
                     </Link>
                   )}
                 </div>

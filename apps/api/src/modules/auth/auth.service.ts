@@ -109,28 +109,75 @@ export class AuthService {
 
     const shouldBeAdmin = this.isConfiguredAdminEmail(profile.email);
 
-    const user = await this.prisma.user.upsert({
-      where: {
-        provider_providerId: {
+    let user: User;
+    if (profile.email && typeof this.prisma.user.findUnique === 'function') {
+      const existingByEmail = await this.prisma.user.findUnique({
+        where: { email: profile.email },
+      });
+
+      if (
+        existingByEmail &&
+        existingByEmail.provider === profile.provider &&
+        existingByEmail.providerId !== profile.providerId &&
+        typeof this.prisma.user.update === 'function'
+      ) {
+        user = await this.prisma.user.update({
+          where: { id: existingByEmail.id },
+          data: {
+            providerId: profile.providerId,
+            name: profile.name,
+            avatarUrl: profile.avatarUrl ?? null,
+            ...(shouldBeAdmin ? { role: UserRole.ADMIN } : {}),
+          },
+        });
+      } else {
+        user = await this.prisma.user.upsert({
+          where: {
+            provider_providerId: {
+              provider: profile.provider,
+              providerId: profile.providerId,
+            },
+          },
+          update: {
+            name: profile.name,
+            avatarUrl: profile.avatarUrl ?? null,
+            ...(profile.email !== undefined ? { email: profile.email } : {}),
+            ...(shouldBeAdmin ? { role: UserRole.ADMIN } : {}),
+          },
+          create: {
+            provider: profile.provider,
+            providerId: profile.providerId,
+            role: shouldBeAdmin ? UserRole.ADMIN : UserRole.USER,
+            email: profile.email ?? null,
+            name: profile.name,
+            avatarUrl: profile.avatarUrl ?? null,
+          },
+        });
+      }
+    } else {
+      user = await this.prisma.user.upsert({
+        where: {
+          provider_providerId: {
+            provider: profile.provider,
+            providerId: profile.providerId,
+          },
+        },
+        update: {
+          name: profile.name,
+          avatarUrl: profile.avatarUrl ?? null,
+          ...(profile.email !== undefined ? { email: profile.email } : {}),
+          ...(shouldBeAdmin ? { role: UserRole.ADMIN } : {}),
+        },
+        create: {
           provider: profile.provider,
           providerId: profile.providerId,
+          role: shouldBeAdmin ? UserRole.ADMIN : UserRole.USER,
+          email: profile.email ?? null,
+          name: profile.name,
+          avatarUrl: profile.avatarUrl ?? null,
         },
-      },
-      update: {
-        name: profile.name,
-        avatarUrl: profile.avatarUrl ?? null,
-        ...(profile.email !== undefined ? { email: profile.email } : {}),
-        ...(shouldBeAdmin ? { role: UserRole.ADMIN } : {}),
-      },
-      create: {
-        provider: profile.provider,
-        providerId: profile.providerId,
-        role: shouldBeAdmin ? UserRole.ADMIN : UserRole.USER,
-        email: profile.email ?? null,
-        name: profile.name,
-        avatarUrl: profile.avatarUrl ?? null,
-      },
-    });
+      });
+    }
 
     if (user.status === AccountStatus.BANNED) {
       throw new ForbiddenException({
@@ -169,6 +216,18 @@ export class AuthService {
 
   async logout(params: { rawRefreshToken?: string; userId?: string }): Promise<void> {
     await this.tokenService.revokeRefreshToken(params);
+  }
+
+  tryExtractUserId(rawAccessToken?: string): string | undefined {
+    if (!rawAccessToken) {
+      return undefined;
+    }
+    try {
+      const payload = this.tokenService.verifyAccessToken(rawAccessToken);
+      return payload.sub;
+    } catch {
+      return undefined;
+    }
   }
 
   async getProfile(userId: string) {

@@ -64,7 +64,7 @@ export function setSessionCookies(
 ): void {
   res.cookie(ACCESS_COOKIE_NAME, tokens.accessToken, {
     ...baseCookieOptions(isProd, '/'),
-    maxAge: ACCESS_TOKEN_TTL_SECONDS * 1000,
+    maxAge: tokens.refreshMaxAgeMs,
   });
 
   res.cookie(REFRESH_COOKIE_NAME, tokens.refreshToken, {

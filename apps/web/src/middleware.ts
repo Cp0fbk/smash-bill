@@ -23,14 +23,15 @@ function isPublicRoute(pathname: string): boolean {
 }
 
 export function middleware(request: NextRequest) {
-  const { pathname } = request.nextUrl;
+  const { pathname, searchParams } = request.nextUrl;
   const hasAccessCookie = Boolean(request.cookies.get(ACCESS_COOKIE_NAME)?.value);
 
   if (pathname === '/login') {
-    if (hasAccessCookie) {
-      return NextResponse.redirect(new URL('/', request.url));
+    const response = NextResponse.next();
+    if (searchParams.has('reauth') || searchParams.has('error')) {
+      response.cookies.delete(ACCESS_COOKIE_NAME);
     }
-    return NextResponse.next();
+    return response;
   }
 
   if (!isPublicRoute(pathname) && !hasAccessCookie) {

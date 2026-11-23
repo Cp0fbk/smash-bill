@@ -13,8 +13,12 @@ export default function LoginPage() {
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const errorParam = params.get('error');
+    const reauthParam = params.get('reauth');
+    const nextParam = params.get('next');
     if (errorParam) {
       setAuthError('Đăng nhập Google không thành công. Vui lòng thử lại.');
+      setStage('login');
+    } else if (reauthParam || nextParam) {
       setStage('login');
     }
   }, []);
