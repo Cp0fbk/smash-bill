@@ -149,6 +149,23 @@ export class PrismaClubRepository implements ClubRepository {
     return club ? mapClubRecord(club) : null;
   }
 
+  async findClubByInviteCode(inviteCode: string): Promise<ClubRecord | null> {
+    const club = await this.prisma.club.findUnique({
+      where: { inviteCode },
+      include: {
+        _count: {
+          select: {
+            members: {
+              where: { isActive: true },
+            },
+          },
+        },
+      },
+    });
+
+    return club ? mapClubRecord(club) : null;
+  }
+
   async findMembership(clubId: string, userId: string): Promise<ClubMembershipRecord | null> {
     const membership = await this.prisma.clubMember.findUnique({
       where: {

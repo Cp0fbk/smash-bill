@@ -72,6 +72,7 @@ export interface ClubRepository {
   createClubWithAdmin(input: CreateClubRecordInput): Promise<ClubWithMyRole>;
   findClubsByUserId(userId: string): Promise<ClubWithMyRole[]>;
   findClubById(clubId: string): Promise<ClubRecord | null>;
+  findClubByInviteCode(inviteCode: string): Promise<ClubRecord | null>;
   findMembership(clubId: string, userId: string): Promise<ClubMembershipRecord | null>;
   updateClub(clubId: string, data: UpdateClubRecordInput): Promise<ClubRecord>;
   updateBankAccount(clubId: string, data: UpdateBankAccountRecordInput): Promise<ClubRecord>;

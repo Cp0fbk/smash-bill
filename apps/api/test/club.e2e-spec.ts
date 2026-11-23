@@ -270,4 +270,208 @@ describe('Club Management, Bank Account & Role Guard Matrix E2E', () => {
     expect(rotateRes.body.inviteCode).not.toBe(clubRes.body.inviteCode);
     expect(rotateRes.body.publicToken).not.toBe(clubRes.body.publicToken);
   });
+
+  it('manages club roster, Vietnamese diacritic search, public invite self-join, reactivation, last-HOST rule, and 5/min/IP join throttling', async () => {
+    const host = await createTestUser({
+      providerId: 'google-host-s04',
+      name: 'Nguyễn Minh Quân',
+      email: 'host-s04@saomai.club',
+    });
+    const memberUser = await createTestUser({
+      providerId: 'google-member-s04',
+      name: 'Trần Hoàng Nam',
+      email: 'nam-s04@saomai.club',
+    });
+
+    const clubRes = await request(app.getHttpServer())
+      .post('/api/v1/clubs')
+      .set('Cookie', [host.authCookie])
+      .send({
+        name: 'CLB Cầu Lông Sao Mai',
+        location: 'Sân Sao Mai, Phú Nhuận',
+        defaultCourtFee: 240000,
+      })
+      .expect(201);
+
+    const clubId: string = clubRes.body.id;
+    const inviteCode: string = clubRes.body.inviteCode;
+
+    // Add memberUser to club so we can test MEMBER role matrix on roster endpoints
+    await db.prisma.clubMember.create({
+      data: {
+        clubId,
+        userId: memberUser.user.id,
+        displayName: memberUser.user.name,
+        phone: '0909111222',
+        role: ClubRole.MEMBER,
+        publicToken: 'mem_token_s04_regular_1',
+      },
+    });
+
+    // 1. HOST adds a member with formatted phone -> phone normalized to 0912345678
+    const addRes1 = await request(app.getHttpServer())
+      .post(`/api/v1/clubs/${clubId}/members`)
+      .set('Cookie', [host.authCookie])
+      .send({
+        displayName: 'Phạm Văn Mình',
+        phone: '0912 345 678',
+        role: 'MEMBER',
+      })
+      .expect(201);
+
+    expect(addRes1.body).toMatchObject({
+      clubId,
+      displayName: 'Phạm Văn Mình',
+      phone: '0912345678',
+      role: 'MEMBER',
+      isActive: true,
+    });
+
+    // 2. Duplicate phone detection on POST /clubs/:clubId/members (+84 format) -> returns existing
+    const addDuplicateRes = await request(app.getHttpServer())
+      .post(`/api/v1/clubs/${clubId}/members`)
+      .set('Cookie', [host.authCookie])
+      .send({
+        displayName: 'Phạm Văn Mình 2',
+        phone: '+84 912-345-678',
+      })
+      .expect(201);
+
+    expect(addDuplicateRes.body.id).toBe(addRes1.body.id);
+
+    // 3. MEMBER can list and search roster with/without diacritics (`minh` finds `Minh` and `Mình`)
+    const searchRes = await request(app.getHttpServer())
+      .get(`/api/v1/clubs/${clubId}/members`)
+      .query({ q: 'minh' })
+      .set('Cookie', [memberUser.authCookie])
+      .expect(200);
+
+    expect(searchRes.body.map((m: { displayName: string }) => m.displayName)).toEqual(
+      expect.arrayContaining(['Nguyễn Minh Quân', 'Phạm Văn Mình']),
+    );
+    expect(searchRes.body).toHaveLength(2);
+
+    // 4. MEMBER cannot POST/PATCH/DELETE roster members -> 403
+    await request(app.getHttpServer())
+      .post(`/api/v1/clubs/${clubId}/members`)
+      .set('Cookie', [memberUser.authCookie])
+      .send({ displayName: 'Unauthorized Add' })
+      .expect(403);
+
+    await request(app.getHttpServer())
+      .patch(`/api/v1/clubs/${clubId}/members/${addRes1.body.id}`)
+      .set('Cookie', [memberUser.authCookie])
+      .send({ displayName: 'Unauthorized Edit' })
+      .expect(403);
+
+    await request(app.getHttpServer())
+      .delete(`/api/v1/clubs/${clubId}/members/${addRes1.body.id}`)
+      .set('Cookie', [memberUser.authCookie])
+      .expect(403);
+
+    // 5. Sole HOST cannot deactivate or demote themselves -> 400 LAST_HOST_REQUIRED
+    const allMembersRes = await request(app.getHttpServer())
+      .get(`/api/v1/clubs/${clubId}/members`)
+      .set('Cookie', [host.authCookie])
+      .expect(200);
+    const hostMember = allMembersRes.body.find((m: { role: string }) => m.role === 'HOST');
+    expect(hostMember).toBeDefined();
+
+    const lastHostDelRes = await request(app.getHttpServer())
+      .delete(`/api/v1/clubs/${clubId}/members/${hostMember.id}`)
+      .set('Cookie', [host.authCookie])
+      .expect(400);
+    expect(lastHostDelRes.body.code).toBe('LAST_HOST_REQUIRED');
+
+    // 6. Public invite preview works without authentication and leaks no member data
+    const inviteInfoRes = await request(app.getHttpServer())
+      .get(`/api/v1/public/invite/${inviteCode}`)
+      .expect(200);
+
+    expect(inviteInfoRes.body).toMatchObject({
+      clubId,
+      name: 'CLB Cầu Lông Sao Mai',
+      location: 'Sân Sao Mai, Phú Nhuận',
+      memberCount: 3,
+    });
+    expect(inviteInfoRes.body.members).toBeUndefined();
+
+    // 7. Public self-join via QR invite without login -> creates member & returns publicToken
+    const selfJoinRes = await request(app.getHttpServer())
+      .post(`/api/v1/public/invite/${inviteCode}/join`)
+      .send({
+        displayName: 'Đức Anh Guest',
+        phone: '0977 888 999',
+        type: 'GUEST',
+      })
+      .expect(201);
+
+    expect(selfJoinRes.body).toMatchObject({
+      isExisting: false,
+      reactivated: false,
+      member: {
+        displayName: 'Đức Anh Guest',
+        phone: '0977888999',
+        role: 'GUEST',
+        isActive: true,
+      },
+    });
+    expect(selfJoinRes.body.member.publicToken).toHaveLength(21);
+
+    // 8. Deactivating member and re-joining via invite reactivates instead of duplicating
+    await request(app.getHttpServer())
+      .delete(`/api/v1/clubs/${clubId}/members/${selfJoinRes.body.member.id}`)
+      .set('Cookie', [host.authCookie])
+      .expect(200);
+
+    const rejoinRes = await request(app.getHttpServer())
+      .post(`/api/v1/public/invite/${inviteCode}/join`)
+      .send({
+        displayName: 'Đức Anh Regular',
+        phone: '+84977888999',
+        type: 'REGULAR',
+      })
+      .expect(201);
+
+    expect(rejoinRes.body).toMatchObject({
+      isExisting: true,
+      reactivated: true,
+      member: {
+        id: selfJoinRes.body.member.id,
+        displayName: 'Đức Anh Regular',
+        role: 'MEMBER',
+        isActive: true,
+        publicToken: selfJoinRes.body.member.publicToken,
+      },
+    });
+
+    // 9. Throttling on POST /public/invite/:inviteCode/join (5/min/IP):
+    // We already made 2 join calls above; make 3 more (total 5 -> 201), 6th must return 429
+    for (let i = 3; i <= 5; i++) {
+      await request(app.getHttpServer())
+        .post(`/api/v1/public/invite/${inviteCode}/join`)
+        .send({
+          displayName: `Walk-in Player ${i}`,
+          type: 'GUEST',
+        })
+        .expect(201);
+    }
+
+    await request(app.getHttpServer())
+      .post(`/api/v1/public/invite/${inviteCode}/join`)
+      .send({
+        displayName: 'Throttled 6th Player',
+        type: 'GUEST',
+      })
+      .expect(429);
+
+    // 10. Rotating invite code invalidates old inviteCode -> 404
+    await request(app.getHttpServer())
+      .post(`/api/v1/clubs/${clubId}/tokens/rotate`)
+      .set('Cookie', [host.authCookie])
+      .send({ rotateInviteCode: true, rotatePublicToken: false })
+      .expect(200);
+
+    await request(app.getHttpServer()).get(`/api/v1/public/invite/${inviteCode}`).expect(404);
+  });
 });

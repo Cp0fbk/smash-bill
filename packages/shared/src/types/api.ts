@@ -85,3 +85,67 @@ export interface RotateClubTokensPayload {
   rotateInviteCode?: boolean;
   rotatePublicToken?: boolean;
 }
+
+export interface ClubMemberDto {
+  id: string;
+  clubId: string;
+  userId: string | null;
+  displayName: string;
+  phone: string | null;
+  role: ClubRole;
+  publicToken: string;
+  isActive: boolean;
+  joinedAt: string;
+  updatedAt: string;
+}
+
+export interface ListClubMembersQuery {
+  role?: ClubRole;
+  active?: boolean;
+  q?: string;
+}
+
+export interface AddClubMemberPayload {
+  displayName: string;
+  phone?: string;
+  role?: ClubRole;
+}
+
+export interface UpdateClubMemberPayload {
+  displayName?: string;
+  phone?: string | null;
+  role?: ClubRole;
+  isActive?: boolean;
+}
+
+export interface PublicInviteClubInfo {
+  clubId: string;
+  name: string;
+  slug: string;
+  description: string | null;
+  location: string | null;
+  sport: 'BADMINTON';
+  memberCount: number;
+}
+
+export type InviteSelfJoinType = 'REGULAR' | 'GUEST';
+
+export interface JoinByInvitePayload {
+  displayName: string;
+  phone?: string;
+  type?: InviteSelfJoinType;
+}
+
+export interface JoinByInviteResult {
+  club: PublicInviteClubInfo;
+  member: {
+    id: string;
+    displayName: string;
+    phone: string | null;
+    role: ClubRole;
+    publicToken: string;
+    isActive: boolean;
+  };
+  isExisting: boolean;
+  reactivated: boolean;
+}
