@@ -1,11 +1,18 @@
 import type {
+  AddClubMemberPayload,
   ApiError,
   AuthUserProfile,
   ClubDetail,
+  ClubMemberDto,
   ClubSummary,
   CreateClubPayload,
+  JoinByInvitePayload,
+  JoinByInviteResult,
+  ListClubMembersQuery,
+  PublicInviteClubInfo,
   RotateClubTokensPayload,
   UpdateBankAccountPayload,
+  UpdateClubMemberPayload,
   UpdateClubPayload,
 } from '@smash-bill/shared';
 
@@ -40,6 +47,12 @@ async function tryRefreshSession(): Promise<boolean> {
         method: 'POST',
         credentials: 'include',
       });
+      if (!response.ok) {
+        await fetch(`${API_BASE_URL}/auth/logout`, {
+          method: 'POST',
+          credentials: 'include',
+        }).catch(() => undefined);
+      }
       return response.ok;
     } catch {
       return false;
@@ -160,4 +173,78 @@ export function rotateClubTokens(
     method: 'POST',
     body: JSON.stringify(payload),
   });
+}
+
+export function fetchClubMembers(
+  clubId: string,
+  query?: ListClubMembersQuery,
+): Promise<ClubMemberDto[]> {
+  const params = new URLSearchParams();
+  if (query?.role) {
+    params.set('role', query.role);
+  }
+  if (query?.active !== undefined) {
+    params.set('active', String(query.active));
+  }
+  if (query?.q?.trim()) {
+    params.set('q', query.q.trim());
+  }
+  const qs = params.toString();
+  const suffix = qs ? `?${qs}` : '';
+  return apiFetch<ClubMemberDto[]>(`/clubs/${encodeURIComponent(clubId)}/members${suffix}`);
+}
+
+export function addClubMember(
+  clubId: string,
+  payload: AddClubMemberPayload,
+): Promise<ClubMemberDto> {
+  return apiFetch<ClubMemberDto>(`/clubs/${encodeURIComponent(clubId)}/members`, {
+    method: 'POST',
+    body: JSON.stringify(payload),
+  });
+}
+
+export function updateClubMember(
+  clubId: string,
+  memberId: string,
+  payload: UpdateClubMemberPayload,
+): Promise<ClubMemberDto> {
+  return apiFetch<ClubMemberDto>(
+    `/clubs/${encodeURIComponent(clubId)}/members/${encodeURIComponent(memberId)}`,
+    {
+      method: 'PATCH',
+      body: JSON.stringify(payload),
+    },
+  );
+}
+
+export function deactivateClubMember(clubId: string, memberId: string): Promise<ClubMemberDto> {
+  return apiFetch<ClubMemberDto>(
+    `/clubs/${encodeURIComponent(clubId)}/members/${encodeURIComponent(memberId)}`,
+    {
+      method: 'DELETE',
+    },
+  );
+}
+
+export function fetchPublicInviteInfo(inviteCode: string): Promise<PublicInviteClubInfo> {
+  return apiFetch<PublicInviteClubInfo>(
+    `/public/invite/${encodeURIComponent(inviteCode)}`,
+    {},
+    false,
+  );
+}
+
+export function joinClubByInvite(
+  inviteCode: string,
+  payload: JoinByInvitePayload,
+): Promise<JoinByInviteResult> {
+  return apiFetch<JoinByInviteResult>(
+    `/public/invite/${encodeURIComponent(inviteCode)}/join`,
+    {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    },
+    false,
+  );
 }
