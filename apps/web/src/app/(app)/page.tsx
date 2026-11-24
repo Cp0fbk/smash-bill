@@ -1,5 +1,10 @@
 'use client';
 
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { cn } from '@/lib/utils';
+import { formatVnd } from '@smash-bill/shared';
+import { Check } from 'lucide-react';
 import Link from 'next/link';
 import { useState } from 'react';
 
@@ -18,11 +23,7 @@ const INITIAL_PLAYERS: CourtPlayer[] = [
   { id: 'p5', name: 'Vũ Đức', roleLabel: 'Cố định (CLB)', present: false },
 ];
 
-const SESSION_COST_VND = 265000;
-
-function formatVnd(amount: number): string {
-  return `${new Intl.NumberFormat('vi-VN').format(Math.max(0, amount))} ₫`;
-}
+const SESSION_COST_VND = 265_000;
 
 export default function HomePage() {
   const [players, setPlayers] = useState<CourtPlayer[]>(INITIAL_PLAYERS);
@@ -51,124 +52,106 @@ export default function HomePage() {
   return (
     <div className="mx-auto max-w-3xl space-y-5">
       {/* 3 Compact KPI Cards */}
-      <section
-        aria-label="Tổng quan chi phí buổi đánh"
-        className="grid grid-cols-3 gap-3 rounded-block border border-border bg-card p-4 shadow-block sm:p-5"
-      >
-        <div className="rounded-tile bg-secondary/70 p-3">
-          <p className="text-xs font-medium text-muted-foreground">Tổng chi phí</p>
-          <p className="mt-1 font-mono text-base font-bold text-card-foreground tabular-nums sm:text-lg">
-            {formatVnd(SESSION_COST_VND)}
-          </p>
-        </div>
+      <Card aria-label="Tổng quan chi phí buổi đánh">
+        <CardContent className="grid grid-cols-3 gap-3 p-4 sm:p-5">
+          <div className="rounded-tile bg-secondary/70 p-3">
+            <p className="text-xs font-medium text-muted-foreground">Tổng chi phí</p>
+            <p className="mt-1 font-mono text-base font-bold text-card-foreground tabular-nums sm:text-lg">
+              {formatVnd(SESSION_COST_VND)}
+            </p>
+          </div>
 
-        <div className="rounded-tile bg-primary-soft p-3">
-          <p className="text-xs font-medium text-primary">Mỗi người</p>
-          <p className="mt-1 font-mono text-base font-bold text-primary tabular-nums sm:text-lg">
-            {formatVnd(perPlayerShare)}
-          </p>
-        </div>
+          <div className="rounded-tile bg-primary-soft p-3">
+            <p className="text-xs font-medium text-primary">Mỗi người</p>
+            <p className="mt-1 font-mono text-base font-bold text-primary tabular-nums sm:text-lg">
+              {formatVnd(perPlayerShare)}
+            </p>
+          </div>
 
-        <div className="rounded-tile bg-success-soft p-3">
-          <p className="text-xs font-medium text-on-success-soft">Dư quỹ CLB</p>
-          <p className="mt-1 font-mono text-base font-bold text-success tabular-nums sm:text-lg">
-            +{formatVnd(clubFundSurplus)}
-          </p>
-        </div>
-      </section>
+          <div className="rounded-tile bg-success-soft p-3">
+            <p className="text-xs font-medium text-on-success-soft">Dư quỹ CLB</p>
+            <p className="mt-1 font-mono text-base font-bold text-success tabular-nums sm:text-lg">
+              +{formatVnd(clubFundSurplus)}
+            </p>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* 1-Touch Attendance List */}
-      <section
-        aria-labelledby="attendance-heading"
-        className="rounded-block border border-border bg-card p-5 shadow-block"
-      >
-        <div className="flex items-center justify-between">
-          <h1 id="attendance-heading" className="text-base font-bold text-card-foreground">
+      <Card aria-labelledby="attendance-heading">
+        <CardHeader className="flex-row items-center justify-between space-y-0 pb-4">
+          <CardTitle id="attendance-heading">
             Điểm danh buổi đánh ({presentCount}/{players.length})
-          </h1>
+          </CardTitle>
           <span className="text-xs text-muted-foreground">Chạm để điểm danh</span>
-        </div>
+        </CardHeader>
 
-        <ul className="mt-4 space-y-2">
-          {players.map((player) => {
-            const share = player.present ? perPlayerShare : 0;
+        <CardContent>
+          <ul className="space-y-2">
+            {players.map((player) => {
+              const share = player.present ? perPlayerShare : 0;
 
-            return (
-              <li key={player.id}>
-                <button
-                  type="button"
-                  role="switch"
-                  aria-checked={player.present}
-                  onClick={() => toggleAttendance(player.id)}
-                  className={`flex min-h-[52px] w-full cursor-pointer items-center justify-between rounded-tile border px-3.5 py-2.5 text-left transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring [touch-action:manipulation] ${
-                    player.present
-                      ? 'border-border bg-card hover:bg-secondary/50'
-                      : 'border-border bg-secondary/50 opacity-70'
-                  }`}
-                >
-                  <div className="flex items-center gap-3">
-                    <span
-                      aria-hidden="true"
-                      className={`flex h-5 w-5 items-center justify-center rounded-md ${
-                        player.present
-                          ? 'bg-success text-on-success'
-                          : 'border border-border bg-card text-transparent'
-                      }`}
-                    >
-                      <svg
+              return (
+                <li key={player.id}>
+                  <button
+                    type="button"
+                    role="switch"
+                    aria-checked={player.present}
+                    onClick={() => toggleAttendance(player.id)}
+                    className={cn(
+                      'flex min-h-[52px] w-full cursor-pointer items-center justify-between rounded-tile border px-3.5 py-2.5 text-left transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring [touch-action:manipulation]',
+                      player.present
+                        ? 'border-border bg-card hover:bg-secondary/50'
+                        : 'border-border bg-secondary/50 opacity-70',
+                    )}
+                  >
+                    <div className="flex items-center gap-3">
+                      <span
                         aria-hidden="true"
-                        className="h-3.5 w-3.5"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="3"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      >
-                        <path d="M20 6 9 17l-5-5" />
-                      </svg>
-                    </span>
-                    <div>
-                      <p
-                        className={`text-sm font-semibold ${
+                        className={cn(
+                          'flex h-5 w-5 items-center justify-center rounded-md',
                           player.present
-                            ? 'text-card-foreground'
-                            : 'text-muted-foreground line-through'
-                        }`}
+                            ? 'bg-success text-on-success'
+                            : 'border border-border bg-card text-transparent',
+                        )}
                       >
-                        {player.name}
-                      </p>
-                      <p className="text-xs text-muted-foreground">{player.roleLabel}</p>
+                        <Check className="h-3.5 w-3.5 stroke-[3]" aria-hidden="true" />
+                      </span>
+                      <div>
+                        <p
+                          className={cn(
+                            'text-sm font-semibold',
+                            player.present
+                              ? 'text-card-foreground'
+                              : 'text-muted-foreground line-through',
+                          )}
+                        >
+                          {player.name}
+                        </p>
+                        <p className="text-xs text-muted-foreground">{player.roleLabel}</p>
+                      </div>
                     </div>
-                  </div>
 
-                  <span className="font-mono text-sm font-bold text-primary tabular-nums">
-                    {formatVnd(share)}
-                  </span>
-                </button>
-              </li>
-            );
-          })}
-        </ul>
+                    <span className="font-mono text-sm font-bold text-primary tabular-nums">
+                      {formatVnd(share)}
+                    </span>
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+        </CardContent>
 
-        {/* Link to Dedicated Public Payment Route (/pay/[matchToken]) */}
-        <div className="mt-5 flex flex-col gap-2.5 border-t border-border pt-4 sm:flex-row">
-          <Link
-            href="/pay/saomai-t5"
-            className="flex min-h-[46px] flex-1 cursor-pointer items-center justify-center gap-2 rounded-tile bg-primary px-4 py-2.5 text-xs font-semibold text-on-primary shadow-cta transition-colors duration-200 hover:bg-primary-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring [touch-action:manipulation]"
-          >
-            <span>Xem bill &amp; Mã VietQR thu tiền</span>
-          </Link>
+        <CardFooter className="flex-col gap-2.5 sm:flex-row">
+          <Button asChild className="w-full flex-1">
+            <Link href="/pay/saomai-t5">Xem bill &amp; Mã VietQR thu tiền</Link>
+          </Button>
 
-          <button
-            type="button"
-            onClick={copyPayLink}
-            className="inline-flex min-h-[46px] cursor-pointer items-center justify-center rounded-tile border border-border bg-secondary/70 px-4 py-2.5 text-xs font-semibold text-secondary-foreground transition-colors duration-200 hover:bg-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring [touch-action:manipulation]"
-          >
-            <span>{copiedLink ? 'Đã chép link /pay' : 'Chép link gửi Zalo'}</span>
-          </button>
-        </div>
-      </section>
+          <Button variant="secondary" onClick={copyPayLink} className="w-full sm:w-auto">
+            {copiedLink ? 'Đã chép link /pay' : 'Chép link gửi Zalo'}
+          </Button>
+        </CardFooter>
+      </Card>
     </div>
   );
 }

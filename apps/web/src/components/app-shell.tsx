@@ -1,5 +1,19 @@
 'use client';
 
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
+import { Separator } from '@/components/ui/separator';
+import { cn } from '@/lib/utils';
+import {
+  Calendar,
+  LayoutGrid,
+  type LucideIcon,
+  Plus,
+  Shield,
+  ShoppingBag,
+  Users,
+} from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import type { ReactNode } from 'react';
@@ -13,7 +27,7 @@ interface NavPillar {
   label: string;
   shortLabel: string;
   matchPrefix?: string;
-  icon: (active: boolean) => ReactNode;
+  Icon: LucideIcon;
 }
 
 const NAV_PILLARS: NavPillar[] = [
@@ -21,91 +35,28 @@ const NAV_PILLARS: NavPillar[] = [
     href: '/',
     label: 'Tổng quan',
     shortLabel: 'Tổng quan',
-    icon: () => (
-      <svg
-        aria-hidden="true"
-        className="h-5 w-5 shrink-0"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      >
-        <rect width="7" height="9" x="3" y="3" rx="1" />
-        <rect width="7" height="5" x="14" y="3" rx="1" />
-        <rect width="7" height="9" x="14" y="12" rx="1" />
-        <rect width="7" height="5" x="3" y="16" rx="1" />
-      </svg>
-    ),
+    Icon: LayoutGrid,
   },
   {
     href: '/matches',
     label: 'Kèo giao lưu & Buổi đánh',
     shortLabel: 'Giao lưu',
     matchPrefix: '/matches',
-    icon: () => (
-      <svg
-        aria-hidden="true"
-        className="h-5 w-5 shrink-0"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      >
-        <rect width="18" height="18" x="3" y="4" rx="2" ry="2" />
-        <line x1="16" x2="16" y1="2" y2="6" />
-        <line x1="8" x2="8" y1="2" y2="6" />
-        <line x1="3" x2="21" y1="10" y2="10" />
-      </svg>
-    ),
+    Icon: Calendar,
   },
   {
     href: '/market',
     label: 'Chợ vợt & Phụ kiện',
     shortLabel: 'Chợ vợt',
     matchPrefix: '/market',
-    icon: () => (
-      <svg
-        aria-hidden="true"
-        className="h-5 w-5 shrink-0"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      >
-        <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z" />
-        <path d="M3 6h18" />
-        <path d="M16 10a4 4 0 0 1-8 0" />
-      </svg>
-    ),
+    Icon: ShoppingBag,
   },
   {
     href: '/clubs',
     label: 'CLB cố định & Hồ sơ',
     shortLabel: 'CLB',
     matchPrefix: '/clubs',
-    icon: () => (
-      <svg
-        aria-hidden="true"
-        className="h-5 w-5 shrink-0"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      >
-        <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
-        <circle cx="9" cy="7" r="4" />
-        <path d="M22 21v-2a4 4 0 0 0-3-3.87" />
-        <path d="M16 3.13a4 4 0 0 1 0 7.75" />
-      </svg>
-    ),
+    Icon: Users,
   },
 ];
 
@@ -124,9 +75,9 @@ export function AppShell({ children }: { children: ReactNode }) {
     <div className="min-h-dvh bg-background text-foreground">
       <div className="mx-auto flex min-h-dvh max-w-7xl flex-col lg:flex-row lg:gap-6 lg:px-6 lg:py-6">
         {/* Desktop Persistent Left Sidebar Rail (>= 1024px) */}
-        <aside
+        <Card
           aria-label="Điều hướng chính"
-          className="hidden w-[260px] shrink-0 lg:flex lg:flex-col lg:justify-between lg:rounded-block lg:border lg:border-border lg:bg-card lg:p-5 lg:shadow-block"
+          className="hidden w-[260px] shrink-0 lg:flex lg:flex-col lg:justify-between lg:p-5"
         >
           <div className="space-y-6">
             {/* Brand Header */}
@@ -151,52 +102,44 @@ export function AppShell({ children }: { children: ReactNode }) {
             <nav aria-label="Menu 4 trụ cột" className="space-y-1.5">
               {NAV_PILLARS.map((pillar) => {
                 const active = isNavActive(pathname, pillar);
+                const Icon = pillar.Icon;
                 return (
-                  <Link
+                  <Button
                     key={pillar.href}
-                    href={pillar.href}
-                    aria-current={active ? 'page' : undefined}
-                    className={`flex min-h-[44px] items-center gap-3 rounded-tile px-3.5 py-2.5 text-sm font-semibold transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
-                      active
-                        ? 'bg-primary text-on-primary shadow-tile'
-                        : 'text-secondary-foreground hover:bg-secondary/80'
-                    }`}
+                    asChild
+                    variant={active ? 'default' : 'ghost'}
+                    className={cn(
+                      'w-full justify-start gap-3 px-3.5 text-sm',
+                      !active && 'text-secondary-foreground hover:bg-secondary/80',
+                    )}
                   >
-                    {pillar.icon(active)}
-                    <span>{pillar.label}</span>
-                  </Link>
+                    <Link href={pillar.href} aria-current={active ? 'page' : undefined}>
+                      <Icon className="h-5 w-5 shrink-0" aria-hidden="true" />
+                      <span>{pillar.label}</span>
+                    </Link>
+                  </Button>
                 );
               })}
 
               {isPlatformAdmin && (
-                <Link
-                  href="/admin"
-                  aria-current={pathname.startsWith('/admin') ? 'page' : undefined}
-                  className={`flex min-h-[44px] items-center justify-between rounded-tile border px-3.5 py-2.5 text-sm font-semibold transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
-                    pathname.startsWith('/admin')
-                      ? 'border-border-strong bg-primary-soft text-primary'
-                      : 'border-border bg-secondary/40 text-secondary-foreground hover:bg-secondary'
-                  }`}
+                <Button
+                  asChild
+                  variant={pathname.startsWith('/admin') ? 'soft' : 'outline'}
+                  className="w-full justify-between px-3.5 text-sm"
                 >
-                  <span className="flex items-center gap-3">
-                    <svg
-                      aria-hidden="true"
-                      className="h-5 w-5 shrink-0"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    >
-                      <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10" />
-                    </svg>
-                    <span>Quản trị hệ thống</span>
-                  </span>
-                  <span className="rounded-pill bg-primary px-2 py-0.5 font-mono text-[10px] font-bold text-on-primary">
-                    ADMIN
-                  </span>
-                </Link>
+                  <Link
+                    href="/admin"
+                    aria-current={pathname.startsWith('/admin') ? 'page' : undefined}
+                  >
+                    <span className="flex items-center gap-3">
+                      <Shield className="h-5 w-5 shrink-0" aria-hidden="true" />
+                      <span>Quản trị hệ thống</span>
+                    </span>
+                    <Badge variant="default" className="px-2 py-0.5 font-mono text-[10px]">
+                      ADMIN
+                    </Badge>
+                  </Link>
+                </Button>
               )}
             </nav>
 
@@ -210,79 +153,66 @@ export function AppShell({ children }: { children: ReactNode }) {
                 <strong>Kèo giao lưu</strong> cho từng buổi ra sân.
               </p>
               <div className="grid grid-cols-1 gap-1.5 pt-1">
-                <Link
-                  href="/matches"
-                  className="flex min-h-[40px] w-full items-center justify-center gap-1.5 rounded-tile border border-border bg-card px-3 py-2 text-xs font-semibold text-card-foreground shadow-tile transition-colors duration-200 hover:bg-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                >
-                  <span>Tìm / Mở kèo giao lưu</span>
-                </Link>
-                <Link
-                  href="/clubs/new"
-                  className="flex min-h-[40px] w-full items-center justify-center gap-1.5 rounded-tile bg-primary px-3 py-2 text-xs font-semibold text-on-primary shadow-tile transition-colors duration-200 hover:bg-primary-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                >
-                  <svg
-                    aria-hidden="true"
-                    className="h-3.5 w-3.5"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2.5"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  >
-                    <path d="M5 12h14" />
-                    <path d="M12 5v14" />
-                  </svg>
-                  <span>Tạo CLB cố định</span>
-                </Link>
+                <Button asChild variant="outline" size="sm" className="w-full">
+                  <Link href="/matches">Tìm / Mở kèo giao lưu</Link>
+                </Button>
+                <Button asChild size="sm" className="w-full">
+                  <Link href="/clubs/new">
+                    <Plus aria-hidden="true" />
+                    <span>Tạo CLB cố định</span>
+                  </Link>
+                </Button>
               </div>
             </div>
           </div>
 
           {/* Sidebar Footer */}
-          <div className="space-y-3 border-t border-border pt-4">
+          <div className="space-y-3 pt-4">
+            <Separator />
             <div className="flex items-center justify-between">
               <span className="text-xs font-medium text-muted-foreground">Giao diện</span>
               <ThemeToggle />
             </div>
           </div>
-        </aside>
+        </Card>
 
         {/* Main Workspace Container */}
         <div className="flex min-w-0 flex-1 flex-col px-4 pt-4 pb-28 sm:px-6 lg:px-0 lg:pt-0 lg:pb-6">
           {/* Top Command Bar */}
-          <header className="flex flex-col gap-2.5 rounded-block border border-border bg-card px-4 py-3 shadow-block sm:flex-row sm:items-center sm:justify-between sm:px-5 sm:py-3.5">
-            <div className="flex min-w-0 items-center justify-between gap-2">
-              <div className="flex min-w-0 items-center gap-2.5">
-                <Link
-                  href="/"
-                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-border bg-card p-1.5 shadow-tile lg:hidden"
-                >
-                  <BrandLogo alt="SmashBill" size={28} />
-                </Link>
-                <div className="flex min-w-0 items-center gap-2">
-                  <span className="shrink-0 text-base font-bold tracking-tight text-card-foreground lg:hidden">
-                    Smash<span className="text-primary">Bill</span>
-                  </span>
-                  <span className="truncate rounded-pill bg-primary-soft px-2.5 py-0.5 text-xs font-semibold text-primary">
-                    {NAV_PILLARS.find((p) => isNavActive(pathname, p))?.label ??
-                      'CLB & Kèo giao lưu'}
-                  </span>
+          <Card className="px-4 py-3 sm:px-5 sm:py-3.5">
+            <header className="flex flex-col gap-2.5 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex min-w-0 items-center justify-between gap-2">
+                <div className="flex min-w-0 items-center gap-2.5">
+                  <Link
+                    href="/"
+                    className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border border-border bg-card p-1.5 shadow-tile lg:hidden"
+                  >
+                    <BrandLogo alt="SmashBill" size={28} />
+                  </Link>
+                  <div className="flex min-w-0 items-center gap-2">
+                    <span className="shrink-0 text-base font-bold tracking-tight text-card-foreground lg:hidden">
+                      Smash<span className="text-primary">Bill</span>
+                    </span>
+                    <Badge variant="soft" className="truncate">
+                      {NAV_PILLARS.find((p) => isNavActive(pathname, p))?.label ??
+                        'CLB & Kèo giao lưu'}
+                    </Badge>
+                  </div>
+                </div>
+
+                <div className="shrink-0 sm:hidden">
+                  <ThemeToggle />
                 </div>
               </div>
 
-              <div className="shrink-0 sm:hidden">
-                <ThemeToggle />
+              <div className="flex items-center justify-end gap-2 border-t border-border pt-2.5 sm:border-t-0 sm:pt-0">
+                <div className="hidden shrink-0 sm:block lg:hidden">
+                  <ThemeToggle />
+                </div>
+                <UserSessionBar />
               </div>
-            </div>
-
-            <div className="flex items-center justify-end gap-2 border-t border-border pt-2.5 sm:border-t-0 sm:pt-0">
-              <div className="hidden shrink-0 sm:block lg:hidden">
-                <ThemeToggle />
-              </div>
-              <UserSessionBar />
-            </div>
-          </header>
+            </header>
+          </Card>
 
           {/* Page Content */}
           <main className="mt-6 flex-1">{children}</main>
@@ -297,18 +227,20 @@ export function AppShell({ children }: { children: ReactNode }) {
         <ul className="mx-auto grid max-w-md grid-cols-4 gap-1">
           {NAV_PILLARS.map((pillar) => {
             const active = isNavActive(pathname, pillar);
+            const Icon = pillar.Icon;
             return (
               <li key={pillar.href}>
                 <Link
                   href={pillar.href}
                   aria-current={active ? 'page' : undefined}
-                  className={`flex min-h-[48px] flex-col items-center justify-center gap-1 rounded-tile px-2 py-1 text-[11px] font-semibold transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring [touch-action:manipulation] ${
+                  className={cn(
+                    'flex min-h-[48px] flex-col items-center justify-center gap-1 rounded-tile px-2 py-1 text-[11px] font-semibold transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring [touch-action:manipulation]',
                     active
                       ? 'bg-primary-soft text-primary'
-                      : 'text-muted-foreground hover:text-card-foreground'
-                  }`}
+                      : 'text-muted-foreground hover:text-card-foreground',
+                  )}
                 >
-                  {pillar.icon(active)}
+                  <Icon className="h-5 w-5 shrink-0" aria-hidden="true" />
                   <span className="truncate">{pillar.shortLabel}</span>
                 </Link>
               </li>

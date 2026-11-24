@@ -9,16 +9,21 @@
   --color-foreground: #0f172a;
   --color-card: #ffffff;
   --color-card-foreground: #0f172a;
+  --color-popover: #ffffff;
+  --color-popover-foreground: #0f172a;
   --color-secondary: #f1f5f9;
   --color-secondary-foreground: #1e293b;
   --color-muted: #e2e8f0;
   --color-muted-foreground: #64748b;
+  --color-accent: #f1f5f9;
+  --color-accent-foreground: #0f172a;
 
   /* Brand & Semantic Accents */
   --color-primary: #0060d0;
   --color-primary-hover: #004ca6;
   --color-primary-soft: #eff6ff;
   --color-on-primary: #ffffff;
+  --color-primary-foreground: #ffffff;
 
   --color-accent-qr: #0284c7;
   --color-accent-qr-soft: #e0f2fe;
@@ -36,14 +41,18 @@
   --color-destructive: #dc2626;
   --color-destructive-soft: #fef2f2;
   --color-on-destructive: #ffffff;
+  --color-destructive-foreground: #ffffff;
+  --color-on-destructive-soft: #b91c1c;
 
-  /* Hairline Borders & Focus Ring */
+  /* Hairline Borders, Inputs & Focus Ring */
   --color-border: #e2e8f0;
   --color-border-strong: #0060d0;
+  --color-input: #cbd5e1;
   --color-ring: #0060d0;
 
   /* Minimalism & Swiss Style Radii & Soft Elevation */
   --typography-display: clamp(1.625rem, 2.5vw, 2.125rem);
+  --radius: 0.75rem;
   --radius-block: 1.25rem;
   --radius-tile: 0.75rem;
   --radius-pill: 9999px;
@@ -60,15 +69,20 @@
   --color-foreground: #f8fafc;
   --color-card: #081629;
   --color-card-foreground: #f8fafc;
+  --color-popover: #081629;
+  --color-popover-foreground: #f8fafc;
   --color-secondary: #0f233d;
   --color-secondary-foreground: #e2e8f0;
   --color-muted: #162e4d;
   --color-muted-foreground: #94a3b8;
+  --color-accent: #0f233d;
+  --color-accent-foreground: #f8fafc;
 
   --color-primary: #38bdf8;
   --color-primary-hover: #0ea5e9;
   --color-primary-soft: #0c2948;
   --color-on-primary: #040d1a;
+  --color-primary-foreground: #040d1a;
 
   --color-accent-qr: #22d3ee;
   --color-accent-qr-soft: #083344;
@@ -86,9 +100,12 @@
   --color-destructive: #fb7185;
   --color-destructive-soft: #4c0519;
   --color-on-destructive: #040d1a;
+  --color-destructive-foreground: #040d1a;
+  --color-on-destructive-soft: #fda4af;
 
   --color-border: #173052;
   --color-border-strong: #38bdf8;
+  --color-input: #1e3a5f;
   --color-ring: #38bdf8;
 
   --shadow-block: 0 16px 40px -10px rgba(0, 0, 0, 0.55);
@@ -106,15 +123,20 @@
   --color-foreground: var(--color-foreground);
   --color-card: var(--color-card);
   --color-card-foreground: var(--color-card-foreground);
+  --color-popover: var(--color-popover);
+  --color-popover-foreground: var(--color-popover-foreground);
   --color-secondary: var(--color-secondary);
   --color-secondary-foreground: var(--color-secondary-foreground);
   --color-muted: var(--color-muted);
   --color-muted-foreground: var(--color-muted-foreground);
+  --color-accent: var(--color-accent);
+  --color-accent-foreground: var(--color-accent-foreground);
 
   --color-primary: var(--color-primary);
   --color-primary-hover: var(--color-primary-hover);
   --color-primary-soft: var(--color-primary-soft);
   --color-on-primary: var(--color-on-primary);
+  --color-primary-foreground: var(--color-primary-foreground);
 
   --color-accent-qr: var(--color-accent-qr);
   --color-accent-qr-soft: var(--color-accent-qr-soft);
@@ -132,11 +154,18 @@
   --color-destructive: var(--color-destructive);
   --color-destructive-soft: var(--color-destructive-soft);
   --color-on-destructive: var(--color-on-destructive);
+  --color-destructive-foreground: var(--color-destructive-foreground);
+  --color-on-destructive-soft: var(--color-on-destructive-soft);
 
   --color-border: var(--color-border);
   --color-border-strong: var(--color-border-strong);
+  --color-input: var(--color-input);
   --color-ring: var(--color-ring);
 
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: var(--radius-block);
   --radius-block: var(--radius-block);
   --radius-tile: var(--radius-tile);
   --radius-pill: var(--radius-pill);
@@ -163,6 +192,7 @@ body {
   0% {
     transform: scaleX(0);
   }
+
   100% {
     transform: scaleX(1);
   }
@@ -173,6 +203,7 @@ body {
     opacity: 0;
     transform: translateY(8px);
   }
+
   100% {
     opacity: 1;
     transform: translateY(0);

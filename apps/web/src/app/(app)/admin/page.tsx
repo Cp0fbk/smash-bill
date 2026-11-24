@@ -1,5 +1,8 @@
 'use client';
 
+import { Badge } from '@/components/ui/badge';
+import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Skeleton } from '@/components/ui/skeleton';
 import { ForbiddenState } from '../../../components/forbidden-state';
 import { useClubPermissions, useCurrentUser } from '../../../lib/auth-context';
 
@@ -9,10 +12,7 @@ export default function PlatformAdminPage() {
 
   if (loading) {
     return (
-      <div
-        aria-label="Đang kiểm tra quyền quản trị"
-        className="h-56 animate-pulse rounded-block border border-border bg-card p-6 shadow-block motion-reduce:animate-none"
-      />
+      <Skeleton aria-label="Đang kiểm tra quyền quản trị" className="h-56 w-full rounded-block" />
     );
   }
 
@@ -28,22 +28,21 @@ export default function PlatformAdminPage() {
   }
 
   return (
-    <section
-      aria-labelledby="admin-console-heading"
-      className="rounded-block border border-border bg-card p-6 shadow-block sm:p-8"
-    >
-      <span className="rounded-pill bg-primary-soft px-2.5 py-0.5 font-mono text-xs font-bold text-primary">
-        Platform ADMIN Console
-      </span>
-      <h1
-        id="admin-console-heading"
-        className="mt-2 text-xl font-bold text-card-foreground sm:text-2xl"
-      >
-        Quản trị hệ thống SmashBill
-      </h1>
-      <p className="mt-1 text-xs text-muted-foreground sm:text-sm">
-        Kiểm duyệt báo cáo bùng kèo (S14) và điều phối dữ liệu kèo giao lưu từ Social Crawler (S15).
-      </p>
-    </section>
+    <Card aria-labelledby="admin-console-heading">
+      <CardHeader className="p-6 sm:p-8">
+        <div>
+          <Badge variant="soft" className="font-mono">
+            Platform ADMIN Console
+          </Badge>
+        </div>
+        <CardTitle id="admin-console-heading" className="mt-2 text-xl sm:text-2xl">
+          Quản trị hệ thống SmashBill
+        </CardTitle>
+        <CardDescription>
+          Kiểm duyệt báo cáo bùng kèo (S14) và điều phối dữ liệu kèo giao lưu từ Social Crawler
+          (S15).
+        </CardDescription>
+      </CardHeader>
+    </Card>
   );
 }

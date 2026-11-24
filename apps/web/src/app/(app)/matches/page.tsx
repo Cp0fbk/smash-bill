@@ -1,5 +1,9 @@
 'use client';
 
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { formatVnd } from '@smash-bill/shared';
 import Link from 'next/link';
 import { useState } from 'react';
@@ -71,67 +75,41 @@ export default function MatchesPage() {
   return (
     <div className="space-y-6">
       {/* Header distinguishing Kèo giao lưu (1 buổi) vs Buổi sinh hoạt CLB (hàng tuần) */}
-      <section
-        aria-labelledby="matches-heading"
-        className="flex flex-col justify-between gap-4 rounded-block border border-border bg-card p-5 shadow-block sm:flex-row sm:items-center sm:p-6"
-      >
-        <div>
-          <span className="rounded-pill bg-primary-soft px-2.5 py-0.5 text-xs font-semibold text-primary">
-            Kèo giao lưu &amp; Buổi đánh
-          </span>
-          <h1
-            id="matches-heading"
-            className="mt-2 text-xl font-bold tracking-tight text-card-foreground sm:text-2xl"
-          >
-            Kèo giao lưu vãng lai &amp; Lịch đánh hàng tuần
-          </h1>
-          <p className="mt-1 text-xs text-muted-foreground sm:text-sm">
-            Tham gia <strong>kèo giao lưu 1 buổi</strong> với hội mới, hoặc mở{' '}
-            <strong>buổi đánh định kỳ</strong> cho CLB của bạn.
-          </p>
-        </div>
+      <Card aria-labelledby="matches-heading">
+        <CardContent className="flex flex-col justify-between gap-4 p-5 sm:flex-row sm:items-center sm:p-6">
+          <div>
+            <Badge variant="soft">Kèo giao lưu &amp; Buổi đánh</Badge>
+            <h1
+              id="matches-heading"
+              className="mt-2 text-xl font-bold tracking-tight text-card-foreground sm:text-2xl"
+            >
+              Kèo giao lưu vãng lai &amp; Lịch đánh hàng tuần
+            </h1>
+            <p className="mt-1 text-xs text-muted-foreground sm:text-sm">
+              Tham gia <strong>kèo giao lưu 1 buổi</strong> với hội mới, hoặc mở{' '}
+              <strong>buổi đánh định kỳ</strong> cho CLB của bạn.
+            </p>
+          </div>
 
-        <div className="flex flex-wrap gap-2.5">
-          <Link
-            href="/"
-            className="inline-flex min-h-[44px] cursor-pointer items-center rounded-tile bg-primary px-4 py-2.5 text-xs font-semibold text-on-primary shadow-cta transition-colors hover:bg-primary-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring [touch-action:manipulation]"
-          >
-            Bảng điểm danh buổi đánh
-          </Link>
-          <Link
-            href="/clubs"
-            className="inline-flex min-h-[44px] cursor-pointer items-center rounded-tile border border-border bg-secondary/70 px-4 py-2.5 text-xs font-semibold text-secondary-foreground transition-colors hover:bg-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring [touch-action:manipulation]"
-          >
-            CLB cố định của tôi
-          </Link>
-        </div>
-      </section>
+          <div className="flex flex-wrap gap-2.5">
+            <Button asChild>
+              <Link href="/">Bảng điểm danh buổi đánh</Link>
+            </Button>
+            <Button asChild variant="secondary">
+              <Link href="/clubs">CLB cố định của tôi</Link>
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Filter Tabs: All / Kèo giao lưu 1 buổi / Lịch CLB hàng tuần */}
-      <div className="flex flex-wrap items-center gap-2">
-        {[
-          { id: 'ALL' as const, label: 'Tất cả buổi đánh' },
-          { id: 'GIAO_LUU' as const, label: 'Kèo giao lưu (vãng lai 1 buổi)' },
-          { id: 'CLUB_WEEKLY' as const, label: 'Lịch sinh hoạt CLB (hàng tuần)' },
-        ].map((tab) => {
-          const active = filter === tab.id;
-          return (
-            <button
-              key={tab.id}
-              type="button"
-              aria-pressed={active}
-              onClick={() => setFilter(tab.id)}
-              className={`min-h-[40px] cursor-pointer rounded-pill border px-4 py-1.5 text-xs font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring [touch-action:manipulation] ${
-                active
-                  ? 'border-border-strong bg-primary text-on-primary'
-                  : 'border-border bg-card text-secondary-foreground hover:bg-secondary'
-              }`}
-            >
-              {tab.label}
-            </button>
-          );
-        })}
-      </div>
+      <Tabs value={filter} onValueChange={(v) => setFilter(v as MatchFilter)}>
+        <TabsList>
+          <TabsTrigger value="ALL">Tất cả buổi đánh</TabsTrigger>
+          <TabsTrigger value="GIAO_LUU">Kèo giao lưu (vãng lai 1 buổi)</TabsTrigger>
+          <TabsTrigger value="CLUB_WEEKLY">Lịch sinh hoạt CLB (hàng tuần)</TabsTrigger>
+        </TabsList>
+      </Tabs>
 
       {/* Match Cards Grid */}
       <section
@@ -139,31 +117,24 @@ export default function MatchesPage() {
         className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3"
       >
         {visibleMatches.map((match) => (
-          <article
-            key={match.id}
-            className="flex flex-col justify-between rounded-block border border-border bg-card p-5 shadow-block"
-          >
-            <div>
+          <Card key={match.id} className="flex flex-col justify-between">
+            <CardHeader className="pb-4">
               <div className="flex items-center justify-between gap-2">
-                <span
-                  className={`rounded-pill px-2.5 py-0.5 text-xs font-semibold ${
-                    match.kind === 'GIAO_LUU'
-                      ? 'bg-accent-qr-soft text-on-accent-qr'
-                      : 'bg-primary-soft text-primary'
-                  }`}
-                >
+                <Badge variant={match.kind === 'GIAO_LUU' ? 'info' : 'soft'}>
                   {match.kindLabel}
-                </span>
-                <span className="rounded-pill bg-secondary px-2.5 py-0.5 font-mono text-xs font-semibold text-card-foreground">
+                </Badge>
+                <Badge variant="secondary" className="font-mono">
                   Trình độ: {match.skillRange}
-                </span>
+                </Badge>
               </div>
 
-              <h2 className="mt-3 text-base font-bold text-card-foreground">{match.title}</h2>
-              <p className="mt-1 text-xs font-medium text-muted-foreground">{match.clubName}</p>
-              <p className="mt-1 text-xs text-muted-foreground">{match.location}</p>
+              <CardTitle className="mt-3">{match.title}</CardTitle>
+              <p className="text-xs font-medium text-muted-foreground">{match.clubName}</p>
+              <p className="text-xs text-muted-foreground">{match.location}</p>
+            </CardHeader>
 
-              <div className="mt-4 grid grid-cols-2 gap-2.5 rounded-tile bg-secondary/60 p-3">
+            <CardContent className="pb-4">
+              <div className="grid grid-cols-2 gap-2.5 rounded-tile bg-secondary/60 p-3">
                 <div>
                   <p className="text-[11px] text-muted-foreground">Thời gian</p>
                   <p className="mt-0.5 text-xs font-bold text-card-foreground">
@@ -177,28 +148,22 @@ export default function MatchesPage() {
                   </p>
                 </div>
               </div>
-            </div>
+            </CardContent>
 
-            <div className="mt-4 flex items-center justify-between border-t border-border pt-3.5">
+            <CardFooter className="justify-between">
               <span className="font-mono text-xs font-semibold text-success tabular-nums">
                 Còn {match.openGuestSlots} slot giao lưu
               </span>
               <div className="flex items-center gap-2">
-                <Link
-                  href={`/pay/${match.id}`}
-                  className="inline-flex min-h-[40px] items-center rounded-tile border border-border bg-secondary/70 px-3 py-2 text-xs font-semibold text-secondary-foreground hover:bg-secondary"
-                >
-                  Link QR khách
-                </Link>
-                <Link
-                  href="/"
-                  className="inline-flex min-h-[40px] items-center rounded-tile bg-primary px-3.5 py-2 text-xs font-semibold text-on-primary shadow-tile hover:bg-primary-hover"
-                >
-                  Điểm danh
-                </Link>
+                <Button asChild variant="secondary" size="sm">
+                  <Link href={`/pay/${match.id}`}>Link QR khách</Link>
+                </Button>
+                <Button asChild size="sm">
+                  <Link href="/">Điểm danh</Link>
+                </Button>
               </div>
-            </div>
-          </article>
+            </CardFooter>
+          </Card>
         ))}
       </section>
     </div>

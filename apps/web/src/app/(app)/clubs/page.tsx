@@ -1,28 +1,28 @@
 'use client';
 
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Badge, type BadgeProps } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Skeleton } from '@/components/ui/skeleton';
 import { type ClubRole, type ClubSummary, formatVnd } from '@smash-bill/shared';
+import { Plus, UserPlus } from 'lucide-react';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { fetchMyClubs } from '../../../lib/api-client';
 import { useClubPermissions, useCurrentUser } from '../../../lib/auth-context';
 
-function getRoleBadge(role: ClubRole): { label: string; className: string } {
+function getRoleBadge(role: ClubRole): {
+  label: string;
+  variant: NonNullable<BadgeProps['variant']>;
+} {
   switch (role) {
     case 'HOST':
-      return {
-        label: 'Chủ CLB • HOST',
-        className: 'bg-primary-soft text-primary border-border-strong/30',
-      };
+      return { label: 'Chủ CLB • HOST', variant: 'soft' };
     case 'MEMBER':
-      return {
-        label: 'Thành viên • MEMBER',
-        className: 'bg-success-soft text-on-success-soft border-success/30',
-      };
+      return { label: 'Thành viên • MEMBER', variant: 'success' };
     case 'GUEST':
-      return {
-        label: 'Khách • GUEST',
-        className: 'bg-warning-soft text-on-warning-soft border-warning/30',
-      };
+      return { label: 'Khách • GUEST', variant: 'warning' };
   }
 }
 
@@ -76,66 +76,46 @@ export default function ClubsPage() {
   return (
     <div className="space-y-6">
       {/* Page Header & Create Club CTA */}
-      <section
-        aria-labelledby="clubs-page-heading"
-        className="flex flex-col justify-between gap-4 rounded-block border border-border bg-card p-5 shadow-block sm:flex-row sm:items-center sm:p-6"
-      >
-        <div>
-          <p className="text-xs font-semibold tracking-wider text-muted-foreground uppercase">
-            CLB cố định (Sinh hoạt hàng tuần) &amp; Hồ sơ
-          </p>
-          <h1
-            id="clubs-page-heading"
-            className="mt-1 text-xl font-bold tracking-tight text-card-foreground sm:text-2xl"
-          >
-            Câu lạc bộ cố định của tôi ({clubs.length})
-          </h1>
-          <p className="mt-1 text-xs text-muted-foreground sm:text-sm">
-            Dành cho hội đánh cố định hàng tuần: quản lý thành viên, quỹ CLB và VietQR. Nếu chỉ đi
-            đánh lẻ 1 buổi với người lạ, hãy vào mục <strong>Kèo giao lưu</strong>.
-          </p>
-        </div>
-
-        <div className="flex flex-wrap items-center gap-2.5">
-          {isPlatformAdmin && (
-            <Link
-              href="/admin"
-              className="inline-flex min-h-[44px] cursor-pointer items-center gap-2 rounded-tile border border-border-strong bg-primary-soft px-4 py-2.5 text-xs font-semibold text-primary transition-colors duration-200 hover:bg-primary hover:text-on-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring [touch-action:manipulation]"
+      <Card aria-labelledby="clubs-page-heading">
+        <CardContent className="flex flex-col justify-between gap-4 p-5 sm:flex-row sm:items-center sm:p-6">
+          <div>
+            <p className="text-xs font-semibold tracking-wider text-muted-foreground uppercase">
+              CLB cố định (Sinh hoạt hàng tuần) &amp; Hồ sơ
+            </p>
+            <h1
+              id="clubs-page-heading"
+              className="mt-1 text-xl font-bold tracking-tight text-card-foreground sm:text-2xl"
             >
-              <span>Quản trị hệ thống (ADMIN)</span>
-            </Link>
-          )}
+              Câu lạc bộ cố định của tôi ({clubs.length})
+            </h1>
+            <p className="mt-1 text-xs text-muted-foreground sm:text-sm">
+              Dành cho hội đánh cố định hàng tuần: quản lý thành viên, quỹ CLB và VietQR. Nếu chỉ đi
+              đánh lẻ 1 buổi với người lạ, hãy vào mục <strong>Kèo giao lưu</strong>.
+            </p>
+          </div>
 
-          <Link
-            href="/clubs/new"
-            className="inline-flex min-h-[44px] cursor-pointer items-center gap-2 rounded-tile bg-primary px-4 py-2.5 text-xs font-semibold text-on-primary shadow-cta transition-colors duration-200 hover:bg-primary-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring [touch-action:manipulation]"
-          >
-            <svg
-              aria-hidden="true"
-              className="h-4 w-4"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2.5"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <path d="M5 12h14" />
-              <path d="M12 5v14" />
-            </svg>
-            <span>Tạo CLB mới</span>
-          </Link>
-        </div>
-      </section>
+          <div className="flex flex-wrap items-center gap-2.5">
+            {isPlatformAdmin && (
+              <Button asChild variant="soft">
+                <Link href="/admin">Quản trị hệ thống (ADMIN)</Link>
+              </Button>
+            )}
+
+            <Button asChild>
+              <Link href="/clubs/new">
+                <Plus aria-hidden="true" />
+                <span>Tạo CLB mới</span>
+              </Link>
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Error Banner */}
       {error && (
-        <div
-          role="alert"
-          className="rounded-tile border border-destructive/30 bg-destructive-soft px-4 py-3 text-xs font-semibold text-destructive"
-        >
-          {error}
-        </div>
+        <Alert variant="destructive">
+          <AlertDescription className="font-semibold">{error}</AlertDescription>
+        </Alert>
       )}
 
       {/* Loading Skeleton */}
@@ -145,110 +125,59 @@ export default function ClubsPage() {
           className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3"
         >
           {[1, 2, 3].map((idx) => (
-            <div
-              key={idx}
-              className="h-56 animate-pulse rounded-block border border-border bg-card p-5 shadow-block motion-reduce:animate-none"
-            />
+            <Skeleton key={idx} className="h-56 rounded-block border border-border" />
           ))}
         </div>
       ) : !user ? (
-        <section
+        <Card
           aria-labelledby="guest-clubs-heading"
-          className="rounded-block border border-dashed border-border-strong/50 bg-card p-8 text-center shadow-block sm:p-10"
+          className="border-dashed border-border-strong/50 text-center"
         >
-          <h2 id="guest-clubs-heading" className="text-lg font-bold text-card-foreground">
-            Bạn đang truy cập với tư cách Khách (Guest)
-          </h2>
-          <p className="mx-auto mt-1.5 max-w-md text-xs text-muted-foreground sm:text-sm">
-            Khách vãng lai có thể tự ghi danh qua mã QR (/join/...) hoặc thanh toán VietQR
-            (/pay/...) không cần tài khoản. Để tạo hoặc quản lý CLB cố định của bạn, vui lòng đăng
-            nhập bằng Google.
-          </p>
-          <div className="mt-6 flex justify-center">
-            <a
-              href="/login?reauth=1&next=/clubs"
-              className="inline-flex min-h-[46px] cursor-pointer items-center gap-2 rounded-tile bg-primary px-6 py-3 text-sm font-semibold text-on-primary shadow-cta transition-colors duration-200 hover:bg-primary-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring [touch-action:manipulation]"
-            >
-              <span>Đăng nhập Google ngay</span>
-            </a>
-          </div>
-        </section>
-      ) : !user ? (
-        <section
-          aria-labelledby="guest-clubs-heading"
-          className="rounded-block border border-dashed border-border-strong/50 bg-card p-8 text-center shadow-block sm:p-10"
-        >
-          <h2 id="guest-clubs-heading" className="text-lg font-bold text-card-foreground">
-            Bạn đang truy cập với tư cách Khách (Guest)
-          </h2>
-          <p className="mx-auto mt-1.5 max-w-md text-xs text-muted-foreground sm:text-sm">
-            Khách vãng lai có thể tự ghi danh qua mã QR (/join/...) hoặc thanh toán VietQR
-            (/pay/...) không cần tài khoản. Để tạo hoặc quản lý CLB cố định của bạn, vui lòng đăng
-            nhập bằng Google.
-          </p>
-          <div className="mt-6 flex justify-center">
-            <a
-              href="/login?reauth=1&next=/clubs"
-              className="inline-flex min-h-[46px] cursor-pointer items-center gap-2 rounded-tile bg-primary px-6 py-3 text-sm font-semibold text-on-primary shadow-cta transition-colors duration-200 hover:bg-primary-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring [touch-action:manipulation]"
-            >
-              <span>Đăng nhập Google ngay</span>
-            </a>
-          </div>
-        </section>
+          <CardContent className="p-8 sm:p-10">
+            <h2 id="guest-clubs-heading" className="text-lg font-bold text-card-foreground">
+              Bạn đang truy cập với tư cách Khách (Guest)
+            </h2>
+            <p className="mx-auto mt-1.5 max-w-md text-xs text-muted-foreground sm:text-sm">
+              Khách vãng lai có thể tự ghi danh qua mã QR (/join/...) hoặc thanh toán VietQR
+              (/pay/...) không cần tài khoản. Để tạo hoặc quản lý CLB cố định của bạn, vui lòng đăng
+              nhập bằng Google.
+            </p>
+            <div className="mt-6 flex justify-center">
+              <Button asChild size="lg">
+                <a href="/login?reauth=1&next=/clubs">Đăng nhập Google ngay</a>
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
       ) : clubs.length === 0 ? (
         /* Empty State for First-Time Admins */
-        <section
+        <Card
           aria-labelledby="empty-clubs-heading"
-          className="rounded-block border border-dashed border-border-strong/50 bg-card p-8 text-center shadow-block sm:p-10"
+          className="border-dashed border-border-strong/50 text-center"
         >
-          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-primary-soft text-primary">
-            <svg
-              aria-hidden="true"
-              className="h-7 w-7"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
-              <circle cx="9" cy="7" r="4" />
-              <line x1="19" x2="19" y1="8" y2="14" />
-              <line x1="22" x2="16" y1="11" y2="11" />
-            </svg>
-          </div>
-          <h2 id="empty-clubs-heading" className="mt-4 text-lg font-bold text-card-foreground">
-            Bạn chưa tham gia hoặc tạo CLB nào
-          </h2>
-          <p className="mx-auto mt-1.5 max-w-md text-xs text-muted-foreground sm:text-sm">
-            Khởi tạo CLB cầu lông của bạn trong chưa đầy 30 giây. Thành viên không cần tạo tài khoản
-            vẫn được điểm danh và nhận mã VietQR chia tiền sân.
-          </p>
-          <div className="mt-6 flex justify-center">
-            <Link
-              href="/clubs/new"
-              className="inline-flex min-h-[46px] cursor-pointer items-center gap-2 rounded-tile bg-primary px-6 py-3 text-sm font-semibold text-on-primary shadow-cta transition-colors duration-200 hover:bg-primary-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring [touch-action:manipulation]"
-            >
-              <svg
-                aria-hidden="true"
-                className="h-4 w-4"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2.5"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <path d="M5 12h14" />
-                <path d="M12 5v14" />
-              </svg>
-              <span>Tạo CLB đầu tiên</span>
-            </Link>
-          </div>
-        </section>
+          <CardContent className="p-8 sm:p-10">
+            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-primary-soft text-primary">
+              <UserPlus className="h-7 w-7" aria-hidden="true" />
+            </div>
+            <h2 id="empty-clubs-heading" className="mt-4 text-lg font-bold text-card-foreground">
+              Bạn chưa tham gia hoặc tạo CLB nào
+            </h2>
+            <p className="mx-auto mt-1.5 max-w-md text-xs text-muted-foreground sm:text-sm">
+              Khởi tạo CLB cầu lông của bạn trong chưa đầy 30 giây. Thành viên không cần tạo tài
+              khoản vẫn được điểm danh và nhận mã VietQR chia tiền sân.
+            </p>
+            <div className="mt-6 flex justify-center">
+              <Button asChild size="lg">
+                <Link href="/clubs/new">
+                  <Plus aria-hidden="true" />
+                  <span>Tạo CLB đầu tiên</span>
+                </Link>
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
       ) : (
-        /* Responsive Bento Card Grid (grid-cols-1 md:grid-cols-2 xl:grid-cols-3) */
+        /* Responsive Bento Card Grid */
         <section
           aria-label="Danh sách CLB"
           className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3"
@@ -258,29 +187,27 @@ export default function ClubsPage() {
             const canManageClub = club.myRole === 'HOST';
 
             return (
-              <article
+              <Card
                 key={club.id}
-                className="flex flex-col justify-between rounded-block border border-border bg-card p-5 shadow-block transition-colors duration-200 hover:border-border-strong/50"
+                className="flex flex-col justify-between transition-colors duration-200 hover:border-border-strong/50"
               >
-                <div>
+                <CardHeader className="pb-4">
                   <div className="flex items-start justify-between gap-2">
-                    <span
-                      className={`inline-flex items-center rounded-pill border px-2.5 py-0.5 text-xs font-semibold ${badge.className}`}
-                    >
-                      {badge.label}
-                    </span>
-                    <span className="rounded-pill bg-secondary px-2.5 py-0.5 font-mono text-xs font-semibold text-muted-foreground">
+                    <Badge variant={badge.variant}>{badge.label}</Badge>
+                    <Badge variant="secondary" className="font-mono text-muted-foreground">
                       #{club.inviteCode}
-                    </span>
+                    </Badge>
                   </div>
 
-                  <h2 className="mt-3 text-lg font-bold text-card-foreground">{club.name}</h2>
-                  <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">
+                  <CardTitle className="mt-3 text-lg">{club.name}</CardTitle>
+                  <p className="line-clamp-2 text-xs text-muted-foreground">
                     {club.location || club.description || 'Chưa cập nhật địa điểm sân'}
                   </p>
+                </CardHeader>
 
+                <CardContent className="space-y-3 pb-4">
                   {/* Key Metrics */}
-                  <div className="mt-4 grid grid-cols-2 gap-2.5 rounded-tile bg-secondary/60 p-3">
+                  <div className="grid grid-cols-2 gap-2.5 rounded-tile bg-secondary/60 p-3">
                     <div>
                       <p className="text-[11px] font-medium text-muted-foreground">
                         Giá sân mặc định
@@ -298,7 +225,7 @@ export default function ClubsPage() {
                   </div>
 
                   {/* VietQR Bank Status Pill */}
-                  <div className="mt-3 flex items-center justify-between rounded-tile border border-border px-3 py-2 text-xs">
+                  <div className="flex items-center justify-between rounded-tile border border-border px-3 py-2 text-xs">
                     <span className="font-medium text-muted-foreground">VietQR</span>
                     {club.bankBin && club.bankAccountNo ? (
                       <span className="font-mono font-semibold text-success tabular-nums">
@@ -308,34 +235,24 @@ export default function ClubsPage() {
                       <span className="font-medium text-warning">Chưa cấu hình ngân hàng</span>
                     )}
                   </div>
-                </div>
+                </CardContent>
 
-                {/* Role-Gated Action Footer */}
-                <div className="mt-5 flex items-center gap-2 border-t border-border pt-3.5">
-                  <Link
-                    href={`/clubs/${club.id}`}
-                    className="flex min-h-[44px] flex-1 cursor-pointer items-center justify-center rounded-tile border border-border bg-secondary/70 px-3 py-2 text-xs font-semibold text-secondary-foreground transition-colors duration-200 hover:bg-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring [touch-action:manipulation]"
-                  >
-                    Chi tiết
-                  </Link>
+                <CardFooter className="gap-2">
+                  <Button asChild variant="secondary" className="flex-1 px-3">
+                    <Link href={`/clubs/${club.id}`}>Chi tiết</Link>
+                  </Button>
 
-                  <Link
-                    href={`/clubs/${club.id}/members`}
-                    className="flex min-h-[44px] flex-1 cursor-pointer items-center justify-center rounded-tile border border-border-strong bg-primary-soft px-3 py-2 text-xs font-semibold text-primary transition-colors duration-200 hover:bg-primary hover:text-on-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring [touch-action:manipulation]"
-                  >
-                    Thành viên &amp; QR
-                  </Link>
+                  <Button asChild variant="soft" className="flex-1 px-3">
+                    <Link href={`/clubs/${club.id}/members`}>Thành viên &amp; QR</Link>
+                  </Button>
 
                   {canManageClub && (
-                    <Link
-                      href={`/clubs/${club.id}/settings`}
-                      className="flex min-h-[44px] flex-1 cursor-pointer items-center justify-center gap-1.5 rounded-tile bg-primary px-3 py-2 text-xs font-semibold text-on-primary shadow-tile transition-colors duration-200 hover:bg-primary-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring [touch-action:manipulation]"
-                    >
-                      <span>VietQR</span>
-                    </Link>
+                    <Button asChild className="flex-1 px-3">
+                      <Link href={`/clubs/${club.id}/settings`}>VietQR</Link>
+                    </Button>
                   )}
-                </div>
-              </article>
+                </CardFooter>
+              </Card>
             );
           })}
         </section>
@@ -343,11 +260,8 @@ export default function ClubsPage() {
 
       {/* User Profile & Trust Summary Card */}
       {user && (
-        <section
-          aria-labelledby="profile-summary-heading"
-          className="rounded-block border border-border bg-card p-5 shadow-block sm:p-6"
-        >
-          <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
+        <Card aria-labelledby="profile-summary-heading">
+          <CardContent className="flex flex-col justify-between gap-4 p-5 sm:flex-row sm:items-center sm:p-6">
             <div>
               <h2 id="profile-summary-heading" className="text-base font-bold text-card-foreground">
                 Hồ sơ người chơi • {user.name}
@@ -378,8 +292,8 @@ export default function ClubsPage() {
                 </p>
               </div>
             </div>
-          </div>
-        </section>
+          </CardContent>
+        </Card>
       )}
     </div>
   );

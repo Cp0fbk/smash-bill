@@ -1,10 +1,19 @@
 'use client';
 
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Skeleton } from '@/components/ui/skeleton';
+import { cn } from '@/lib/utils';
 import type {
   InviteSelfJoinType,
   JoinByInviteResult,
   PublicInviteClubInfo,
 } from '@smash-bill/shared';
+import { AlertCircle } from 'lucide-react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { type FormEvent, useEffect, useState } from 'react';
@@ -146,9 +155,9 @@ export default function PublicInviteJoinPage() {
               <span className="text-sm font-extrabold tracking-tight text-foreground">
                 Smash<span className="text-primary">Bill</span>
               </span>
-              <span className="rounded-pill bg-primary-soft px-2 py-0.5 text-[11px] font-semibold text-primary">
+              <Badge variant="soft" className="px-2 text-[11px]">
                 Ghi danh nhanh
-              </span>
+              </Badge>
             </div>
           </Link>
           <div className="shrink-0">
@@ -159,249 +168,220 @@ export default function PublicInviteJoinPage() {
 
       <main className="mx-auto max-w-4xl px-4 py-8 sm:px-6 lg:py-12">
         {loading ? (
-          <div
+          <Skeleton
             aria-label="Đang tải lời mời CLB"
-            className="mx-auto h-72 max-w-lg animate-pulse rounded-block border border-border bg-card p-6 shadow-block motion-reduce:animate-none"
+            className="mx-auto h-72 max-w-lg rounded-block border border-border"
           />
         ) : notFound || !clubInfo ? (
-          <section
-            role="alert"
-            className="mx-auto max-w-lg rounded-block border border-border bg-card p-6 text-center shadow-block sm:p-8"
-          >
-            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-warning-soft text-on-warning-soft">
-              <svg
-                viewBox="0 0 24 24"
-                className="h-6 w-6"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                aria-hidden="true"
-              >
-                <circle cx="12" cy="12" r="10" />
-                <line x1="12" y1="8" x2="12" y2="12" />
-                <line x1="12" y1="16" x2="12.01" y2="16" />
-              </svg>
-            </div>
-            <h1 className="mt-4 text-lg font-bold text-card-foreground">
-              Mã mời không tồn tại hoặc đã được làm mới
-            </h1>
-            <p className="mt-2 text-xs leading-relaxed text-muted-foreground sm:text-sm">
-              {loadError ||
-                'Chủ sân có thể đã đổi mã mời QR mới để bảo mật danh sách CLB. Vui lòng xin lại link hoặc quét mã QR mới nhất tại sân.'}
-            </p>
-            <div className="mt-6 flex justify-center">
-              <Link
-                href="/"
-                className="inline-flex min-h-[44px] cursor-pointer items-center justify-center rounded-tile bg-primary px-5 py-2.5 text-xs font-semibold text-on-primary shadow-cta"
-              >
-                Về trang chủ SmashBill
-              </Link>
-            </div>
-          </section>
+          <Card role="alert" className="mx-auto max-w-lg text-center">
+            <CardContent className="p-6 sm:p-8">
+              <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-warning-soft text-on-warning-soft">
+                <AlertCircle className="h-6 w-6" aria-hidden="true" />
+              </div>
+              <h1 className="mt-4 text-lg font-bold text-card-foreground">
+                Mã mời không tồn tại hoặc đã được làm mới
+              </h1>
+              <p className="mt-2 text-xs leading-relaxed text-muted-foreground sm:text-sm">
+                {loadError ||
+                  'Chủ sân có thể đã đổi mã mời QR mới để bảo mật danh sách CLB. Vui lòng xin lại link hoặc quét mã QR mới nhất tại sân.'}
+              </p>
+              <div className="mt-6 flex justify-center">
+                <Button asChild>
+                  <Link href="/">Về trang chủ SmashBill</Link>
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
         ) : (
           /* Centered max-w-lg on mobile, 12-col split view max-w-4xl on desktop */
           <div className="mx-auto max-w-lg lg:grid lg:max-w-4xl lg:grid-cols-12 lg:items-start lg:gap-8">
             {/* Left 5 Columns: Club Info Showcase */}
-            <section className="mb-6 rounded-block border border-border bg-card p-6 shadow-block lg:col-span-5 lg:mb-0">
-              <span className="inline-flex items-center rounded-pill bg-primary-soft px-3 py-1 text-xs font-semibold text-primary">
-                Lời mời tham gia CLB Cầu Lông
-              </span>
-              <h1 className="mt-3 text-xl font-bold tracking-tight text-card-foreground sm:text-2xl">
-                {clubInfo.name}
-              </h1>
-              <p className="mt-1.5 text-xs text-muted-foreground sm:text-sm">
-                {clubInfo.location || 'Sân cầu lông CLB'}
-              </p>
-
-              {clubInfo.description && (
-                <p className="mt-3 rounded-tile bg-secondary/70 p-3 text-xs leading-relaxed text-muted-foreground">
-                  {clubInfo.description}
+            <Card className="mb-6 lg:col-span-5 lg:mb-0">
+              <CardContent className="p-6">
+                <Badge variant="soft">Lời mời tham gia CLB Cầu Lông</Badge>
+                <h1 className="mt-3 text-xl font-bold tracking-tight text-card-foreground sm:text-2xl">
+                  {clubInfo.name}
+                </h1>
+                <p className="mt-1.5 text-xs text-muted-foreground sm:text-sm">
+                  {clubInfo.location || 'Sân cầu lông CLB'}
                 </p>
-              )}
 
-              <div className="mt-5 grid grid-cols-2 gap-3 border-t border-border pt-4">
-                <div>
-                  <p className="text-[11px] text-muted-foreground">Quy mô hiện tại</p>
-                  <p className="mt-0.5 font-mono text-sm font-bold text-card-foreground tabular-nums">
-                    {clubInfo.memberCount} thành viên
+                {clubInfo.description && (
+                  <p className="mt-3 rounded-tile bg-secondary/70 p-3 text-xs leading-relaxed text-muted-foreground">
+                    {clubInfo.description}
                   </p>
+                )}
+
+                <div className="mt-5 grid grid-cols-2 gap-3 border-t border-border pt-4">
+                  <div>
+                    <p className="text-[11px] text-muted-foreground">Quy mô hiện tại</p>
+                    <p className="mt-0.5 font-mono text-sm font-bold text-card-foreground tabular-nums">
+                      {clubInfo.memberCount} thành viên
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-[11px] text-muted-foreground">Tài khoản</p>
+                    <p className="mt-0.5 text-xs font-bold text-success">Không cần đăng ký</p>
+                  </div>
                 </div>
-                <div>
-                  <p className="text-[11px] text-muted-foreground">Tài khoản</p>
-                  <p className="mt-0.5 text-xs font-bold text-success">Không cần đăng ký</p>
-                </div>
-              </div>
-            </section>
+              </CardContent>
+            </Card>
 
             {/* Right 7 Columns: Self-Join Form OR Personal Link Card */}
-            <section className="rounded-block border border-border bg-card p-6 shadow-block lg:col-span-7">
-              {!joinResult ? (
-                <>
-                  <h2 className="text-base font-bold text-card-foreground sm:text-lg">
-                    Ghi danh vào danh sách điểm danh
-                  </h2>
-                  <p className="mt-1 text-xs text-muted-foreground">
-                    Điền tên thường gọi trên sân để chủ sân điểm danh và chia tiền sân/cầu tự động
-                    qua VietQR.
-                  </p>
-
-                  <form onSubmit={handleSubmit} className="mt-5 space-y-4">
-                    <div>
-                      <label
-                        htmlFor="join-display-name"
-                        className="block text-xs font-semibold text-card-foreground"
-                      >
-                        Họ tên hoặc Biệt danh trên sân *
-                      </label>
-                      <input
-                        id="join-display-name"
-                        type="text"
-                        required
-                        maxLength={80}
-                        value={displayName}
-                        onChange={(e) => setDisplayName(e.target.value)}
-                        placeholder="VD: Minh Quân / Đức Anh"
-                        className="mt-1.5 min-h-[44px] w-full rounded-tile border border-input bg-background px-3.5 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                      />
-                    </div>
-
-                    <div>
-                      <label
-                        htmlFor="join-phone"
-                        className="block text-xs font-semibold text-card-foreground"
-                      >
-                        Số điện thoại / Zalo (khuyên dùng để không bị tạo trùng tên)
-                      </label>
-                      <input
-                        id="join-phone"
-                        type="tel"
-                        maxLength={25}
-                        value={phone}
-                        onChange={(e) => setPhone(e.target.value)}
-                        placeholder="VD: 0912 345 678"
-                        className="mt-1.5 min-h-[44px] w-full rounded-tile border border-input bg-background px-3.5 py-2.5 font-mono text-sm text-foreground tabular-nums placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-                      />
-                    </div>
-
-                    <fieldset>
-                      <legend className="block text-xs font-semibold text-card-foreground">
-                        Hình thức tham gia
-                      </legend>
-                      <div className="mt-1.5 grid grid-cols-1 gap-2.5 sm:grid-cols-2">
-                        <button
-                          type="button"
-                          onClick={() => setJoinType('REGULAR')}
-                          className={`flex min-h-[52px] cursor-pointer flex-col items-start justify-center rounded-tile border p-3 text-left transition-colors [touch-action:manipulation] ${
-                            joinType === 'REGULAR'
-                              ? 'border-primary bg-primary-soft text-primary'
-                              : 'border-border bg-secondary/50 text-foreground hover:bg-secondary'
-                          }`}
-                        >
-                          <span className="text-xs font-bold">Thành viên cố định</span>
-                          <span className="mt-0.5 text-[11px] opacity-80">
-                            Đánh định kỳ hàng tuần / tháng
-                          </span>
-                        </button>
-
-                        <button
-                          type="button"
-                          onClick={() => setJoinType('GUEST')}
-                          className={`flex min-h-[52px] cursor-pointer flex-col items-start justify-center rounded-tile border p-3 text-left transition-colors [touch-action:manipulation] ${
-                            joinType === 'GUEST'
-                              ? 'border-primary bg-primary-soft text-primary'
-                              : 'border-border bg-secondary/50 text-foreground hover:bg-secondary'
-                          }`}
-                        >
-                          <span className="text-xs font-bold">Khách vãng lai (Giao lưu)</span>
-                          <span className="mt-0.5 text-[11px] opacity-80">
-                            Tham gia theo buổi đánh lẻ
-                          </span>
-                        </button>
-                      </div>
-                    </fieldset>
-
-                    {submitError && (
-                      <div
-                        role="alert"
-                        className="rounded-tile border border-destructive/30 bg-destructive-soft px-3.5 py-2.5 text-xs font-semibold text-on-destructive-soft"
-                      >
-                        {submitError}
-                      </div>
-                    )}
-
-                    <button
-                      type="submit"
-                      disabled={submitting}
-                      className="inline-flex min-h-[48px] w-full cursor-pointer items-center justify-center rounded-tile bg-primary px-5 py-3 text-sm font-bold text-on-primary shadow-cta transition-colors hover:bg-primary-hover disabled:opacity-60 [touch-action:manipulation]"
-                    >
-                      {submitting ? 'Đang ghi danh...' : 'Tham gia CLB ngay'}
-                    </button>
-                  </form>
-                </>
-              ) : (
-                <div className="space-y-5">
-                  <div className="rounded-tile border border-success/30 bg-success-soft p-4">
-                    <div className="flex items-center justify-between gap-2">
-                      <span className="text-xs font-bold text-on-success-soft">
-                        {joinResult.reactivated
-                          ? 'Đã kích hoạt lại hồ sơ thành viên của bạn!'
-                          : joinResult.isExisting
-                            ? 'Đã nhận diện hồ sơ thành viên qua số điện thoại!'
-                            : 'Ghi danh thành công vào CLB!'}
-                      </span>
-                      <span className="rounded-pill bg-card px-2.5 py-0.5 font-mono text-[11px] font-bold text-primary">
-                        {joinResult.member.role}
-                      </span>
-                    </div>
-                    <p className="mt-1 text-sm font-bold text-card-foreground">
-                      {joinResult.member.displayName}
-                      {joinResult.member.phone ? ` • ${joinResult.member.phone}` : ''}
-                    </p>
-                  </div>
-
-                  {/* Save Your Personal Link Card */}
-                  <div className="rounded-tile border border-border bg-secondary/60 p-4">
-                    <h3 className="text-sm font-bold text-card-foreground">
-                      Lưu link cá nhân của bạn (/p/{joinResult.member.publicToken.slice(0, 8)}…)
-                    </h3>
+            <Card className="lg:col-span-7">
+              <CardContent className="p-6">
+                {!joinResult ? (
+                  <>
+                    <h2 className="text-base font-bold text-card-foreground sm:text-lg">
+                      Ghi danh vào danh sách điểm danh
+                    </h2>
                     <p className="mt-1 text-xs text-muted-foreground">
-                      Dùng link này để xem lịch sử buổi đánh và quét mã VietQR thanh toán đúng số
-                      tiền của riêng bạn bất cứ lúc nào (không cần đăng nhập).
+                      Điền tên thường gọi trên sân để chủ sân điểm danh và chia tiền sân/cầu tự động
+                      qua VietQR.
                     </p>
 
-                    <div className="mt-4 flex flex-col items-center">
-                      <QrCodeSvg
-                        value={personalUrl}
-                        size={164}
-                        label={`Link cá nhân của ${joinResult.member.displayName}`}
-                      />
-                      <p className="mt-2.5 break-all text-center font-mono text-xs text-primary">
-                        {personalUrl}
-                      </p>
-                    </div>
+                    <form onSubmit={handleSubmit} className="mt-5 space-y-4">
+                      <div className="space-y-1.5">
+                        <Label htmlFor="join-display-name">Họ tên hoặc Biệt danh trên sân *</Label>
+                        <Input
+                          id="join-display-name"
+                          type="text"
+                          required
+                          maxLength={80}
+                          value={displayName}
+                          onChange={(e) => setDisplayName(e.target.value)}
+                          placeholder="VD: Minh Quân / Đức Anh"
+                        />
+                      </div>
 
-                    <div className="mt-4 grid grid-cols-1 gap-2.5 sm:grid-cols-2">
-                      <button
-                        type="button"
-                        onClick={handleCopyPersonalLink}
-                        className="inline-flex min-h-[44px] cursor-pointer items-center justify-center rounded-tile border border-border-strong bg-card px-4 py-2.5 text-xs font-semibold text-foreground transition-colors hover:bg-primary-soft hover:text-primary"
+                      <div className="space-y-1.5">
+                        <Label htmlFor="join-phone">
+                          Số điện thoại / Zalo (khuyên dùng để không bị tạo trùng tên)
+                        </Label>
+                        <Input
+                          id="join-phone"
+                          type="tel"
+                          maxLength={25}
+                          value={phone}
+                          onChange={(e) => setPhone(e.target.value)}
+                          placeholder="VD: 0912 345 678"
+                          className="font-mono tabular-nums"
+                        />
+                      </div>
+
+                      <fieldset className="space-y-1.5">
+                        <legend className="block text-xs font-semibold text-card-foreground">
+                          Hình thức tham gia
+                        </legend>
+                        <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2">
+                          <button
+                            type="button"
+                            onClick={() => setJoinType('REGULAR')}
+                            className={cn(
+                              'flex min-h-[52px] cursor-pointer flex-col items-start justify-center rounded-tile border p-3 text-left transition-colors [touch-action:manipulation]',
+                              joinType === 'REGULAR'
+                                ? 'border-primary bg-primary-soft text-primary'
+                                : 'border-border bg-secondary/50 text-foreground hover:bg-secondary',
+                            )}
+                          >
+                            <span className="text-xs font-bold">Thành viên cố định</span>
+                            <span className="mt-0.5 text-[11px] opacity-80">
+                              Đánh định kỳ hàng tuần / tháng
+                            </span>
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => setJoinType('GUEST')}
+                            className={cn(
+                              'flex min-h-[52px] cursor-pointer flex-col items-start justify-center rounded-tile border p-3 text-left transition-colors [touch-action:manipulation]',
+                              joinType === 'GUEST'
+                                ? 'border-primary bg-primary-soft text-primary'
+                                : 'border-border bg-secondary/50 text-foreground hover:bg-secondary',
+                            )}
+                          >
+                            <span className="text-xs font-bold">Khách vãng lai (Giao lưu)</span>
+                            <span className="mt-0.5 text-[11px] opacity-80">
+                              Tham gia theo buổi đánh lẻ
+                            </span>
+                          </button>
+                        </div>
+                      </fieldset>
+
+                      {submitError && (
+                        <Alert variant="destructive">
+                          <AlertDescription className="font-semibold">
+                            {submitError}
+                          </AlertDescription>
+                        </Alert>
+                      )}
+
+                      <Button
+                        type="submit"
+                        size="lg"
+                        disabled={submitting}
+                        className="w-full font-bold"
                       >
-                        {copiedPersonalLink ? 'Đã sao chép link!' : 'Sao chép link cá nhân'}
-                      </button>
-                      <button
-                        type="button"
-                        onClick={handleSharePersonalLink}
-                        className="inline-flex min-h-[44px] cursor-pointer items-center justify-center rounded-tile bg-primary px-4 py-2.5 text-xs font-semibold text-on-primary shadow-cta transition-colors hover:bg-primary-hover"
-                      >
-                        Lưu / Chia sẻ qua Zalo
-                      </button>
+                        {submitting ? 'Đang ghi danh...' : 'Tham gia CLB ngay'}
+                      </Button>
+                    </form>
+                  </>
+                ) : (
+                  <div className="space-y-5">
+                    <Alert variant="success">
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-xs font-bold">
+                          {joinResult.reactivated
+                            ? 'Đã kích hoạt lại hồ sơ thành viên của bạn!'
+                            : joinResult.isExisting
+                              ? 'Đã nhận diện hồ sơ thành viên qua số điện thoại!'
+                              : 'Ghi danh thành công vào CLB!'}
+                        </span>
+                        <Badge variant="outline" className="font-mono text-[11px] text-primary">
+                          {joinResult.member.role}
+                        </Badge>
+                      </div>
+                      <p className="mt-1 text-sm font-bold text-card-foreground">
+                        {joinResult.member.displayName}
+                        {joinResult.member.phone ? ` • ${joinResult.member.phone}` : ''}
+                      </p>
+                    </Alert>
+
+                    <div className="rounded-tile border border-border bg-secondary/60 p-4">
+                      <h3 className="text-sm font-bold text-card-foreground">
+                        Lưu link cá nhân của bạn (/p/{joinResult.member.publicToken.slice(0, 8)}…)
+                      </h3>
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        Dùng link này để xem lịch sử buổi đánh và quét mã VietQR thanh toán đúng số
+                        tiền của riêng bạn bất cứ lúc nào (không cần đăng nhập).
+                      </p>
+
+                      <div className="mt-4 flex flex-col items-center">
+                        <QrCodeSvg
+                          value={personalUrl}
+                          size={164}
+                          label={`Link cá nhân của ${joinResult.member.displayName}`}
+                        />
+                        <p className="mt-2.5 break-all text-center font-mono text-xs text-primary">
+                          {personalUrl}
+                        </p>
+                      </div>
+
+                      <div className="mt-4 grid grid-cols-1 gap-2.5 sm:grid-cols-2">
+                        <Button
+                          variant="outline"
+                          onClick={handleCopyPersonalLink}
+                          className="border-border-strong"
+                        >
+                          {copiedPersonalLink ? 'Đã sao chép link!' : 'Sao chép link cá nhân'}
+                        </Button>
+                        <Button onClick={handleSharePersonalLink}>Lưu / Chia sẻ qua Zalo</Button>
+                      </div>
                     </div>
                   </div>
-                </div>
-              )}
-            </section>
+                )}
+              </CardContent>
+            </Card>
           </div>
         )}
       </main>

@@ -1,5 +1,35 @@
 'use client';
 
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Badge, type BadgeProps } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
+  Sheet,
+  SheetContent,
+  SheetDescription,
+  SheetHeader,
+  SheetTitle,
+} from '@/components/ui/sheet';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   type ClubDetail,
   type ClubMemberDto,
@@ -7,6 +37,7 @@ import {
   matchesVietnameseSearch,
   normalizePhone,
 } from '@smash-bill/shared';
+import { Plus, QrCode } from 'lucide-react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { type FormEvent, useCallback, useEffect, useMemo, useState } from 'react';
@@ -24,23 +55,17 @@ import { useClubPermissions } from '../../../../../lib/auth-context';
 type RoleFilter = 'ALL' | ClubRole;
 type StatusFilter = 'ACTIVE' | 'INACTIVE';
 
-function getRoleBadge(role: ClubRole): { label: string; className: string } {
+function getRoleBadge(role: ClubRole): {
+  label: string;
+  variant: NonNullable<BadgeProps['variant']>;
+} {
   switch (role) {
     case 'HOST':
-      return {
-        label: 'Chủ sân (HOST)',
-        className: 'bg-primary-soft text-primary border-border-strong/30',
-      };
+      return { label: 'Chủ sân (HOST)', variant: 'soft' };
     case 'MEMBER':
-      return {
-        label: 'Cố định (MEMBER)',
-        className: 'bg-secondary text-foreground border-border',
-      };
+      return { label: 'Cố định (MEMBER)', variant: 'secondary' };
     case 'GUEST':
-      return {
-        label: 'Vãng lai (GUEST)',
-        className: 'bg-warning-soft text-on-warning-soft border-warning/30',
-      };
+      return { label: 'Vãng lai (GUEST)', variant: 'warning' };
   }
 }
 
@@ -59,7 +84,7 @@ export default function ClubMembersPage() {
   const [roleFilter, setRoleFilter] = useState<RoleFilter>('ALL');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('ACTIVE');
 
-  // Quick-add / Sheet form state
+  // Add / Edit Member Dialog state
   const [memberModalOpen, setMemberModalOpen] = useState(false);
   const [editingMember, setEditingMember] = useState<ClubMemberDto | null>(null);
   const [formDisplayName, setFormDisplayName] = useState('');
@@ -76,7 +101,7 @@ export default function ClubMembersPage() {
   const [quickSuccess, setQuickSuccess] = useState<string | null>(null);
   const [quickSubmitting, setQuickSubmitting] = useState(false);
 
-  // Mobile full-screen Invite QR sheet
+  // Mobile Invite QR sheet
   const [qrSheetOpen, setQrSheetOpen] = useState(false);
   const [copiedInvite, setCopiedInvite] = useState(false);
   const [copiedMemberToken, setCopiedMemberToken] = useState<string | null>(null);
@@ -317,103 +342,82 @@ export default function ClubMembersPage() {
 
   if (loading) {
     return (
-      <div
+      <Skeleton
         aria-label="Đang tải danh sách thành viên"
-        className="h-72 animate-pulse rounded-block border border-border bg-card p-6 shadow-block motion-reduce:animate-none"
+        className="h-72 w-full rounded-block border border-border"
       />
     );
   }
 
   if (notFound || !club) {
     return (
-      <section
-        role="alert"
-        className="mx-auto my-8 max-w-lg rounded-block border border-border bg-card p-6 text-center shadow-block sm:p-8"
-      >
-        <h1 className="text-lg font-bold text-card-foreground">404 • Không tìm thấy câu lạc bộ</h1>
-        <p className="mt-2 text-xs text-muted-foreground sm:text-sm">
-          CLB không tồn tại hoặc bạn không có quyền xem danh sách thành viên.
-        </p>
-        <div className="mt-6 flex justify-center">
-          <Link
-            href="/clubs"
-            className="inline-flex min-h-[44px] cursor-pointer items-center rounded-tile bg-primary px-5 py-2.5 text-xs font-semibold text-on-primary shadow-cta"
-          >
-            Quay lại danh sách CLB
-          </Link>
-        </div>
-      </section>
+      <Card role="alert" className="mx-auto my-8 max-w-lg text-center">
+        <CardContent className="p-6 sm:p-8">
+          <h1 className="text-lg font-bold text-card-foreground">
+            404 • Không tìm thấy câu lạc bộ
+          </h1>
+          <p className="mt-2 text-xs text-muted-foreground sm:text-sm">
+            CLB không tồn tại hoặc bạn không có quyền xem danh sách thành viên.
+          </p>
+          <div className="mt-6 flex justify-center">
+            <Button asChild>
+              <Link href="/clubs">Quay lại danh sách CLB</Link>
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
     );
   }
 
   return (
     <div className="space-y-6">
       {/* Top Header */}
-      <section className="flex flex-col justify-between gap-4 rounded-block border border-border bg-card p-5 shadow-block sm:flex-row sm:items-center sm:p-6">
-        <div>
-          <div className="flex flex-wrap items-center gap-2">
-            <Link
-              href={`/clubs/${club.id}`}
-              className="text-xs font-semibold text-muted-foreground hover:text-foreground"
-            >
-              ← {club.name}
-            </Link>
-            <span className="rounded-pill bg-primary-soft px-2.5 py-0.5 font-mono text-xs font-semibold text-primary tabular-nums">
-              {counts.activeTotal} thành viên hoạt động
-            </span>
+      <Card>
+        <CardContent className="flex flex-col justify-between gap-4 p-5 sm:flex-row sm:items-center sm:p-6">
+          <div>
+            <div className="flex flex-wrap items-center gap-2">
+              <Link
+                href={`/clubs/${club.id}`}
+                className="text-xs font-semibold text-muted-foreground hover:text-foreground"
+              >
+                ← {club.name}
+              </Link>
+              <Badge variant="soft" className="font-mono tabular-nums">
+                {counts.activeTotal} thành viên hoạt động
+              </Badge>
+            </div>
+            <h1 className="mt-2 text-xl font-bold tracking-tight text-card-foreground sm:text-2xl">
+              Danh sách thành viên &amp; Mã mời QR
+            </h1>
+            <p className="mt-1 text-xs text-muted-foreground sm:text-sm">
+              Người chơi quét QR tự ghi danh không cần tạo tài khoản (Single-Player First).
+            </p>
           </div>
-          <h1 className="mt-2 text-xl font-bold tracking-tight text-card-foreground sm:text-2xl">
-            Danh sách thành viên &amp; Mã mời QR
-          </h1>
-          <p className="mt-1 text-xs text-muted-foreground sm:text-sm">
-            Người chơi quét QR tự ghi danh không cần tạo tài khoản (Single-Player First).
-          </p>
-        </div>
 
-        <div className="flex flex-wrap items-center gap-2.5">
-          {/* Mobile QR Sheet Trigger */}
-          <button
-            type="button"
-            onClick={() => setQrSheetOpen(true)}
-            className="inline-flex min-h-[44px] cursor-pointer items-center justify-center gap-2 rounded-tile border border-border-strong bg-secondary px-4 py-2.5 text-xs font-semibold text-foreground shadow-tile transition-colors hover:bg-primary-soft hover:text-primary lg:hidden [touch-action:manipulation]"
-          >
-            <svg
-              viewBox="0 0 24 24"
-              className="h-4 w-4 text-primary"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              aria-hidden="true"
+          <div className="flex flex-wrap items-center gap-2.5">
+            <Button
+              variant="outline"
+              onClick={() => setQrSheetOpen(true)}
+              className="border-border-strong bg-secondary lg:hidden"
             >
-              <rect x="3" y="3" width="7" height="7" rx="1" />
-              <rect x="14" y="3" width="7" height="7" rx="1" />
-              <rect x="3" y="14" width="7" height="7" rx="1" />
-              <path d="M14 14h3v3h-3zM18 18h3v3h-3zM14 19h3" />
-            </svg>
-            <span>Mã mời QR</span>
-          </button>
+              <QrCode className="text-primary" aria-hidden="true" />
+              <span>Mã mời QR</span>
+            </Button>
 
-          {canManageClub && (
-            <button
-              type="button"
-              onClick={openAddSheet}
-              className="inline-flex min-h-[44px] cursor-pointer items-center justify-center gap-2 rounded-tile bg-primary px-4 py-2.5 text-xs font-semibold text-on-primary shadow-cta transition-colors hover:bg-primary-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring [touch-action:manipulation]"
-            >
-              <span>+ Thêm thành viên</span>
-            </button>
-          )}
-        </div>
-      </section>
+            {canManageClub && (
+              <Button onClick={openAddSheet}>
+                <Plus aria-hidden="true" />
+                <span>Thêm thành viên</span>
+              </Button>
+            )}
+          </div>
+        </CardContent>
+      </Card>
 
       {error && (
-        <div
-          role="alert"
-          className="rounded-tile border border-destructive/40 bg-destructive-soft px-4 py-3 text-xs font-semibold text-on-destructive-soft"
-        >
-          {error}
-        </div>
+        <Alert variant="destructive">
+          <AlertDescription className="font-semibold">{error}</AlertDescription>
+        </Alert>
       )}
 
       {/* Desktop 12-Col Master-Detail Workspace (8-col Roster + 4-col Sticky QR & Quick-Add) */}
@@ -421,92 +425,72 @@ export default function ClubMembersPage() {
         {/* Left 8 Columns: Search, Filters & Roster List */}
         <div className="space-y-4 lg:col-span-8">
           {/* Search & Filter Toolbar */}
-          <section
-            aria-label="Bộ lọc thành viên"
-            className="space-y-3 rounded-block border border-border bg-card p-4 shadow-block sm:p-5"
-          >
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-              <div className="relative flex-1">
-                <input
-                  type="search"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Tìm theo tên có dấu / không dấu (vd: minh → Minh, Mình) hoặc SĐT..."
-                  aria-label="Tìm kiếm thành viên"
-                  className="min-h-[44px] w-full rounded-tile border border-input bg-background px-3.5 py-2 text-xs text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:text-sm"
-                />
+          <Card aria-label="Bộ lọc thành viên">
+            <CardContent className="space-y-3 p-4 sm:p-5">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+                <div className="relative flex-1">
+                  <Input
+                    type="search"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder="Tìm theo tên có dấu / không dấu (vd: minh → Minh, Mình) hoặc SĐT..."
+                    aria-label="Tìm kiếm thành viên"
+                    className="text-xs sm:text-sm"
+                  />
+                </div>
+
+                {/* Active / Deactivated Status Tabs */}
+                <Tabs
+                  value={statusFilter}
+                  onValueChange={(v) => setStatusFilter(v as StatusFilter)}
+                >
+                  <TabsList>
+                    <TabsTrigger value="ACTIVE">Hoạt động ({counts.activeTotal})</TabsTrigger>
+                    <TabsTrigger value="INACTIVE">Đã ngưng ({counts.inactiveTotal})</TabsTrigger>
+                  </TabsList>
+                </Tabs>
               </div>
 
-              {/* Active / Deactivated Status Switch */}
-              <div className="inline-flex rounded-tile border border-border bg-secondary p-1">
-                <button
-                  type="button"
-                  onClick={() => setStatusFilter('ACTIVE')}
-                  className={`min-h-[36px] cursor-pointer rounded-tile px-3 py-1 text-xs font-semibold transition-colors ${
-                    statusFilter === 'ACTIVE'
-                      ? 'bg-card text-foreground shadow-tile'
-                      : 'text-muted-foreground hover:text-foreground'
-                  }`}
-                >
-                  Hoạt động ({counts.activeTotal})
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setStatusFilter('INACTIVE')}
-                  className={`min-h-[36px] cursor-pointer rounded-tile px-3 py-1 text-xs font-semibold transition-colors ${
-                    statusFilter === 'INACTIVE'
-                      ? 'bg-card text-foreground shadow-tile'
-                      : 'text-muted-foreground hover:text-foreground'
-                  }`}
-                >
-                  Đã ngưng ({counts.inactiveTotal})
-                </button>
-              </div>
-            </div>
-
-            {/* Role Filter Chips */}
-            <div className="flex flex-wrap items-center gap-2">
-              {(
-                [
-                  { id: 'ALL', label: `Tất cả (${counts.activeTotal})` },
-                  { id: 'HOST', label: `Chủ sân (${counts.hosts})` },
-                  { id: 'MEMBER', label: `Cố định (${counts.regulars})` },
-                  { id: 'GUEST', label: `Vãng lai (${counts.guests})` },
-                ] as const
-              ).map((chip) => {
-                const active = roleFilter === chip.id;
-                return (
-                  <button
+              {/* Role Filter Pills */}
+              <div className="flex flex-wrap items-center gap-2">
+                {(
+                  [
+                    { id: 'ALL', label: `Tất cả (${counts.activeTotal})` },
+                    { id: 'HOST', label: `Chủ sân (${counts.hosts})` },
+                    { id: 'MEMBER', label: `Cố định (${counts.regulars})` },
+                    { id: 'GUEST', label: `Vãng lai (${counts.guests})` },
+                  ] as const
+                ).map((chip) => (
+                  <Button
                     key={chip.id}
-                    type="button"
+                    variant={roleFilter === chip.id ? 'default' : 'secondary'}
+                    size="pill"
+                    aria-pressed={roleFilter === chip.id}
                     onClick={() => setRoleFilter(chip.id)}
-                    className={`min-h-[36px] cursor-pointer rounded-pill border px-3.5 py-1 text-xs font-semibold transition-colors [touch-action:manipulation] ${
-                      active
-                        ? 'border-primary bg-primary text-on-primary shadow-tile'
-                        : 'border-border bg-secondary/70 text-muted-foreground hover:text-foreground'
-                    }`}
                   >
                     {chip.label}
-                  </button>
-                );
-              })}
-            </div>
-          </section>
+                  </Button>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
 
           {/* Roster List */}
           {filteredMembers.length === 0 ? (
-            <section className="rounded-block border border-dashed border-border bg-card p-8 text-center shadow-block">
-              <p className="text-sm font-bold text-card-foreground">
-                Không tìm thấy thành viên phù hợp
-              </p>
-              <p className="mt-1 text-xs text-muted-foreground">
-                Thử đổi từ khóa tìm kiếm hoặc chia sẻ mã QR để thành viên tự tham gia.
-              </p>
-            </section>
+            <Card className="border-dashed text-center">
+              <CardContent className="p-8">
+                <p className="text-sm font-bold text-card-foreground">
+                  Không tìm thấy thành viên phù hợp
+                </p>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  Thử đổi từ khóa tìm kiếm hoặc chia sẻ mã QR để thành viên tự tham gia.
+                </p>
+              </CardContent>
+            </Card>
           ) : (
-            <section
+            <Card
               aria-label="Danh sách thành viên"
-              className="divide-y divide-border overflow-hidden rounded-block border border-border bg-card shadow-block"
+              className="divide-y divide-border overflow-hidden"
             >
               {filteredMembers.map((member) => {
                 const badge = getRoleBadge(member.role);
@@ -521,23 +505,23 @@ export default function ClubMembersPage() {
                     className="flex flex-col justify-between gap-3 p-4 transition-colors hover:bg-secondary/40 sm:flex-row sm:items-center sm:px-5"
                   >
                     <div className="flex items-start gap-3.5">
-                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary-soft font-mono text-sm font-bold text-primary">
-                        {member.displayName.trim().charAt(0).toUpperCase()}
-                      </div>
+                      <Avatar>
+                        <AvatarFallback className="text-sm">
+                          {member.displayName.trim().charAt(0).toUpperCase()}
+                        </AvatarFallback>
+                      </Avatar>
                       <div>
                         <div className="flex flex-wrap items-center gap-2">
                           <span className="text-sm font-bold text-card-foreground">
                             {member.displayName}
                           </span>
-                          <span
-                            className={`rounded-pill border px-2.5 py-0.5 text-[11px] font-semibold ${badge.className}`}
-                          >
+                          <Badge variant={badge.variant} className="text-[11px]">
                             {badge.label}
-                          </span>
+                          </Badge>
                           {!member.isActive && (
-                            <span className="rounded-pill bg-destructive-soft px-2 py-0.5 text-[11px] font-semibold text-on-destructive-soft">
+                            <Badge variant="destructive" className="px-2 text-[11px]">
                               Đã ngưng
-                            </span>
+                            </Badge>
                           )}
                         </div>
                         <div className="mt-1 flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
@@ -553,26 +537,29 @@ export default function ClubMembersPage() {
                     </div>
 
                     <div className="flex flex-wrap items-center gap-2">
-                      <button
-                        type="button"
+                      <Button
+                        variant="secondary"
+                        size="sm"
                         onClick={() => handleCopyMemberPersonalLink(member)}
-                        className="inline-flex min-h-[38px] cursor-pointer items-center rounded-tile border border-border bg-secondary px-3 py-1.5 text-xs font-semibold text-foreground transition-colors hover:bg-primary-soft hover:text-primary [touch-action:manipulation]"
                       >
                         {isCopied ? 'Đã chép link /p/' : 'Chép link /p/'}
-                      </button>
+                      </Button>
 
                       {canManageClub && (
                         <>
-                          <button
-                            type="button"
-                            onClick={() => openEditSheet(member)}
-                            className="inline-flex min-h-[38px] cursor-pointer items-center rounded-tile border border-border bg-card px-3 py-1.5 text-xs font-semibold text-card-foreground transition-colors hover:bg-secondary [touch-action:manipulation]"
-                          >
+                          <Button variant="outline" size="sm" onClick={() => openEditSheet(member)}>
                             Sửa
-                          </button>
+                          </Button>
 
-                          <button
-                            type="button"
+                          <Button
+                            variant={
+                              isLastActiveHost
+                                ? 'secondary'
+                                : member.isActive
+                                  ? 'destructive'
+                                  : 'soft'
+                            }
+                            size="sm"
                             disabled={isBusy || isLastActiveHost}
                             title={
                               isLastActiveHost
@@ -580,27 +567,20 @@ export default function ClubMembersPage() {
                                 : undefined
                             }
                             onClick={() => handleToggleActive(member)}
-                            className={`inline-flex min-h-[38px] items-center rounded-tile px-3 py-1.5 text-xs font-semibold transition-colors [touch-action:manipulation] ${
-                              isLastActiveHost
-                                ? 'cursor-not-allowed border border-border bg-secondary/40 text-muted-foreground opacity-60'
-                                : member.isActive
-                                  ? 'cursor-pointer border border-destructive/30 bg-destructive-soft text-on-destructive-soft hover:opacity-90'
-                                  : 'cursor-pointer border border-success/30 bg-success-soft text-on-success-soft hover:opacity-90'
-                            }`}
                           >
                             {isBusy
                               ? 'Đang xử lý...'
                               : member.isActive
                                 ? 'Ngưng HĐ'
                                 : 'Kích hoạt lại'}
-                          </button>
+                          </Button>
                         </>
                       )}
                     </div>
                   </div>
                 );
               })}
-            </section>
+            </Card>
           )}
         </div>
 
@@ -608,299 +588,223 @@ export default function ClubMembersPage() {
         <aside className="space-y-6 lg:col-span-4">
           <div className="sticky top-6 space-y-6">
             {/* Invite QR Card */}
-            <section className="rounded-block border border-border bg-card p-5 shadow-block">
-              <div className="flex items-center justify-between">
-                <h2 className="text-sm font-bold text-card-foreground">Mã QR Tự Tham Gia CLB</h2>
-                <span className="rounded-pill bg-primary-soft px-2.5 py-0.5 font-mono text-xs font-bold text-primary">
-                  {club.inviteCode}
-                </span>
-              </div>
-              <p className="mt-1 text-xs text-muted-foreground">
-                Đưa mã QR này tại sân hoặc gửi vào nhóm Zalo để thành viên tự điền tên trong 5 giây.
-              </p>
+            <Card>
+              <CardHeader className="pb-3">
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-sm">Mã QR Tự Tham Gia CLB</CardTitle>
+                  <Badge variant="soft" className="font-mono font-bold">
+                    {club.inviteCode}
+                  </Badge>
+                </div>
+                <CardDescription className="text-xs">
+                  Đưa mã QR này tại sân hoặc gửi vào nhóm Zalo để thành viên tự điền tên trong 5
+                  giây.
+                </CardDescription>
+              </CardHeader>
 
-              <div className="mt-4 flex flex-col items-center rounded-tile bg-secondary/60 p-4">
-                <QrCodeSvg value={inviteJoinUrl} size={184} label={`Mã QR tham gia ${club.name}`} />
-                <p className="mt-3 break-all text-center font-mono text-[11px] text-muted-foreground">
-                  {inviteJoinUrl}
-                </p>
-              </div>
+              <CardContent className="space-y-4">
+                <div className="flex flex-col items-center rounded-tile bg-secondary/60 p-4">
+                  <QrCodeSvg
+                    value={inviteJoinUrl}
+                    size={184}
+                    label={`Mã QR tham gia ${club.name}`}
+                  />
+                  <p className="mt-3 break-all text-center font-mono text-[11px] text-muted-foreground">
+                    {inviteJoinUrl}
+                  </p>
+                </div>
 
-              <div className="mt-4 grid grid-cols-2 gap-2.5">
-                <button
-                  type="button"
-                  onClick={handleCopyInviteLink}
-                  className="inline-flex min-h-[44px] cursor-pointer items-center justify-center rounded-tile border border-border-strong bg-secondary px-3 py-2 text-xs font-semibold text-foreground transition-colors hover:bg-primary-soft hover:text-primary [touch-action:manipulation]"
-                >
-                  {copiedInvite ? 'Đã chép link!' : 'Sao chép link'}
-                </button>
-                <button
-                  type="button"
-                  onClick={handleShareInviteLink}
-                  className="inline-flex min-h-[44px] cursor-pointer items-center justify-center rounded-tile bg-primary px-3 py-2 text-xs font-semibold text-on-primary shadow-cta transition-colors hover:bg-primary-hover [touch-action:manipulation]"
-                >
-                  Chia sẻ ngay
-                </button>
-              </div>
+                <div className="grid grid-cols-2 gap-2.5">
+                  <Button
+                    variant="outline"
+                    onClick={handleCopyInviteLink}
+                    className="border-border-strong bg-secondary"
+                  >
+                    {copiedInvite ? 'Đã chép link!' : 'Sao chép link'}
+                  </Button>
+                  <Button onClick={handleShareInviteLink}>Chia sẻ ngay</Button>
+                </div>
 
-              <div className="mt-3 text-center">
-                <Link
-                  href={`/join/${club.inviteCode}`}
-                  target="_blank"
-                  className="text-xs font-semibold text-primary underline-offset-4 hover:underline"
-                >
-                  Xem thử trang tự ghi danh (/join/{club.inviteCode}) ↗
-                </Link>
-              </div>
-            </section>
+                <div className="text-center">
+                  <Button asChild variant="link" size="sm">
+                    <Link href={`/join/${club.inviteCode}`} target="_blank">
+                      Xem thử trang tự ghi danh (/join/{club.inviteCode}) ↗
+                    </Link>
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
 
             {/* Quick-Add Member Panel (Desktop HOST only) */}
             {canManageClub && (
-              <section className="hidden rounded-block border border-border bg-card p-5 shadow-block lg:block">
-                <h2 className="text-sm font-bold text-card-foreground">
-                  Thêm nhanh thành viên tại sân
-                </h2>
-                <p className="mt-1 text-xs text-muted-foreground">
-                  Trùng số điện thoại sẽ tự động nhận diện thành viên cũ (không tạo trùng).
-                </p>
+              <Card className="hidden lg:block">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-sm">Thêm nhanh thành viên tại sân</CardTitle>
+                  <CardDescription className="text-xs">
+                    Trùng số điện thoại sẽ tự động nhận diện thành viên cũ (không tạo trùng).
+                  </CardDescription>
+                </CardHeader>
 
-                <form onSubmit={handleDesktopQuickAdd} className="mt-4 space-y-3">
-                  <div>
-                    <label
-                      htmlFor="quick-member-name"
-                      className="block text-xs font-semibold text-card-foreground"
-                    >
-                      Họ tên / Biệt danh *
-                    </label>
-                    <input
-                      id="quick-member-name"
-                      type="text"
-                      required
-                      value={quickName}
-                      onChange={(e) => setQuickName(e.target.value)}
-                      placeholder="VD: Hoàng Bảo Long"
-                      className="mt-1 min-h-[44px] w-full rounded-tile border border-input bg-background px-3 py-2 text-xs text-foreground"
-                    />
-                  </div>
+                <CardContent>
+                  <form onSubmit={handleDesktopQuickAdd} className="space-y-3">
+                    <div className="space-y-1">
+                      <Label htmlFor="quick-member-name">Họ tên / Biệt danh *</Label>
+                      <Input
+                        id="quick-member-name"
+                        type="text"
+                        required
+                        value={quickName}
+                        onChange={(e) => setQuickName(e.target.value)}
+                        placeholder="VD: Hoàng Bảo Long"
+                        className="text-xs"
+                      />
+                    </div>
 
-                  <div>
-                    <label
-                      htmlFor="quick-member-phone"
-                      className="block text-xs font-semibold text-card-foreground"
-                    >
-                      Số điện thoại / Zalo (tuỳ chọn)
-                    </label>
-                    <input
-                      id="quick-member-phone"
-                      type="tel"
-                      value={quickPhone}
-                      onChange={(e) => setQuickPhone(e.target.value)}
-                      placeholder="VD: 0912 345 678"
-                      className="mt-1 min-h-[44px] w-full rounded-tile border border-input bg-background px-3 py-2 font-mono text-xs text-foreground tabular-nums"
-                    />
-                  </div>
+                    <div className="space-y-1">
+                      <Label htmlFor="quick-member-phone">Số điện thoại / Zalo (tuỳ chọn)</Label>
+                      <Input
+                        id="quick-member-phone"
+                        type="tel"
+                        value={quickPhone}
+                        onChange={(e) => setQuickPhone(e.target.value)}
+                        placeholder="VD: 0912 345 678"
+                        className="font-mono text-xs tabular-nums"
+                      />
+                    </div>
 
-                  <div>
-                    <label
-                      htmlFor="quick-member-role"
-                      className="block text-xs font-semibold text-card-foreground"
-                    >
-                      Phân loại
-                    </label>
-                    <select
-                      id="quick-member-role"
-                      value={quickRole}
-                      onChange={(e) => setQuickRole(e.target.value as ClubRole)}
-                      className="mt-1 min-h-[44px] w-full rounded-tile border border-input bg-background px-3 py-2 text-xs text-foreground"
-                    >
-                      <option value="MEMBER">Thành viên cố định (MEMBER)</option>
-                      <option value="GUEST">Khách vãng lai (GUEST)</option>
-                      <option value="HOST">Đồng chủ sân (HOST)</option>
-                    </select>
-                  </div>
+                    <div className="space-y-1">
+                      <Label htmlFor="quick-member-role">Phân loại</Label>
+                      <Select value={quickRole} onValueChange={(v) => setQuickRole(v as ClubRole)}>
+                        <SelectTrigger id="quick-member-role" className="text-xs">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="MEMBER">Thành viên cố định (MEMBER)</SelectItem>
+                          <SelectItem value="GUEST">Khách vãng lai (GUEST)</SelectItem>
+                          <SelectItem value="HOST">Đồng chủ sân (HOST)</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
 
-                  {quickError && (
-                    <p className="text-xs font-semibold text-destructive">{quickError}</p>
-                  )}
-                  {quickSuccess && (
-                    <p className="text-xs font-semibold text-success">{quickSuccess}</p>
-                  )}
+                    {quickError && (
+                      <Alert variant="destructive">
+                        <AlertDescription className="font-semibold">{quickError}</AlertDescription>
+                      </Alert>
+                    )}
+                    {quickSuccess && (
+                      <Alert variant="success">
+                        <AlertDescription className="font-semibold">
+                          {quickSuccess}
+                        </AlertDescription>
+                      </Alert>
+                    )}
 
-                  <button
-                    type="submit"
-                    disabled={quickSubmitting}
-                    className="inline-flex min-h-[44px] w-full cursor-pointer items-center justify-center rounded-tile bg-primary px-4 py-2.5 text-xs font-semibold text-on-primary shadow-cta transition-colors hover:bg-primary-hover disabled:opacity-60"
-                  >
-                    {quickSubmitting ? 'Đang thêm...' : '+ Thêm vào danh sách CLB'}
-                  </button>
-                </form>
-              </section>
+                    <Button type="submit" disabled={quickSubmitting} className="w-full">
+                      {quickSubmitting ? 'Đang thêm...' : '+ Thêm vào danh sách CLB'}
+                    </Button>
+                  </form>
+                </CardContent>
+              </Card>
             )}
           </div>
         </aside>
       </div>
 
-      {/* Add / Edit Member Bottom Sheet (Mobile) & Modal (Desktop) */}
-      {memberModalOpen && (
-        <dialog
-          open
-          aria-modal="true"
-          aria-labelledby="member-sheet-title"
-          className="fixed inset-0 z-50 m-0 flex h-full w-full max-w-none items-end justify-center bg-black/50 p-0 sm:items-center sm:p-4"
-        >
-          <div className="w-full max-w-md rounded-t-block border border-border bg-card p-5 shadow-block sm:rounded-block sm:p-6">
-            <div className="flex items-center justify-between">
-              <h2 id="member-sheet-title" className="text-base font-bold text-card-foreground">
-                {editingMember ? 'Chỉnh sửa thành viên' : 'Thêm thành viên mới'}
-              </h2>
-              <button
-                type="button"
-                onClick={() => setMemberModalOpen(false)}
-                className="inline-flex min-h-[36px] cursor-pointer items-center rounded-tile px-2.5 text-xs font-semibold text-muted-foreground hover:text-foreground"
-              >
-                Đóng ✕
-              </button>
+      {/* Add / Edit Member Dialog */}
+      <Dialog open={memberModalOpen} onOpenChange={setMemberModalOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>
+              {editingMember ? 'Chỉnh sửa thành viên' : 'Thêm thành viên mới'}
+            </DialogTitle>
+          </DialogHeader>
+
+          <form onSubmit={handleModalSubmit} className="space-y-4">
+            <div className="space-y-1.5">
+              <Label htmlFor="sheet-member-name">Họ tên / Biệt danh trên sân *</Label>
+              <Input
+                id="sheet-member-name"
+                type="text"
+                required
+                value={formDisplayName}
+                onChange={(e) => setFormDisplayName(e.target.value)}
+                placeholder="VD: Nguyễn Minh Quân"
+              />
             </div>
 
-            <form onSubmit={handleModalSubmit} className="mt-4 space-y-4">
-              <div>
-                <label
-                  htmlFor="sheet-member-name"
-                  className="block text-xs font-semibold text-card-foreground"
-                >
-                  Họ tên / Biệt danh trên sân *
-                </label>
-                <input
-                  id="sheet-member-name"
-                  type="text"
-                  required
-                  value={formDisplayName}
-                  onChange={(e) => setFormDisplayName(e.target.value)}
-                  placeholder="VD: Nguyễn Minh Quân"
-                  className="mt-1 min-h-[44px] w-full rounded-tile border border-input bg-background px-3.5 py-2 text-sm text-foreground"
-                />
-              </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="sheet-member-phone">Số điện thoại / Zalo (tuỳ chọn)</Label>
+              <Input
+                id="sheet-member-phone"
+                type="tel"
+                value={formPhone}
+                onChange={(e) => setFormPhone(e.target.value)}
+                placeholder="VD: 0912 345 678"
+                className="font-mono tabular-nums"
+              />
+            </div>
 
-              <div>
-                <label
-                  htmlFor="sheet-member-phone"
-                  className="block text-xs font-semibold text-card-foreground"
-                >
-                  Số điện thoại / Zalo (tuỳ chọn)
-                </label>
-                <input
-                  id="sheet-member-phone"
-                  type="tel"
-                  value={formPhone}
-                  onChange={(e) => setFormPhone(e.target.value)}
-                  placeholder="VD: 0912 345 678"
-                  className="mt-1 min-h-[44px] w-full rounded-tile border border-input bg-background px-3.5 py-2 font-mono text-sm text-foreground tabular-nums"
-                />
-              </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="sheet-member-role">Vai trò trong CLB</Label>
+              <Select value={formRole} onValueChange={(v) => setFormRole(v as ClubRole)}>
+                <SelectTrigger id="sheet-member-role">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="MEMBER">Thành viên cố định (MEMBER)</SelectItem>
+                  <SelectItem value="GUEST">Khách vãng lai (GUEST)</SelectItem>
+                  <SelectItem value="HOST">Chủ sân / Quản trị (HOST)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
 
-              <div>
-                <label
-                  htmlFor="sheet-member-role"
-                  className="block text-xs font-semibold text-card-foreground"
-                >
-                  Vai trò trong CLB
-                </label>
-                <select
-                  id="sheet-member-role"
-                  value={formRole}
-                  onChange={(e) => setFormRole(e.target.value as ClubRole)}
-                  className="mt-1 min-h-[44px] w-full rounded-tile border border-input bg-background px-3.5 py-2 text-sm text-foreground"
-                >
-                  <option value="MEMBER">Thành viên cố định (MEMBER)</option>
-                  <option value="GUEST">Khách vãng lai (GUEST)</option>
-                  <option value="HOST">Chủ sân / Quản trị (HOST)</option>
-                </select>
-              </div>
+            {formError && (
+              <Alert variant="destructive">
+                <AlertDescription className="font-semibold">{formError}</AlertDescription>
+              </Alert>
+            )}
 
-              {formError && (
-                <p
-                  role="alert"
-                  className="rounded-tile bg-destructive-soft px-3 py-2 text-xs font-semibold text-on-destructive-soft"
-                >
-                  {formError}
-                </p>
-              )}
-
-              <div className="flex items-center justify-end gap-2.5 pt-2">
-                <button
-                  type="button"
-                  onClick={() => setMemberModalOpen(false)}
-                  className="inline-flex min-h-[44px] cursor-pointer items-center justify-center rounded-tile border border-border bg-secondary px-4 py-2 text-xs font-semibold text-foreground"
-                >
-                  Huỷ
-                </button>
-                <button
-                  type="submit"
-                  disabled={formSubmitting}
-                  className="inline-flex min-h-[44px] cursor-pointer items-center justify-center rounded-tile bg-primary px-5 py-2 text-xs font-semibold text-on-primary shadow-cta disabled:opacity-60"
-                >
-                  {formSubmitting ? 'Đang lưu...' : editingMember ? 'Lưu thay đổi' : 'Thêm ngay'}
-                </button>
-              </div>
-            </form>
-          </div>
-        </dialog>
-      )}
+            <DialogFooter>
+              <Button variant="secondary" onClick={() => setMemberModalOpen(false)}>
+                Huỷ
+              </Button>
+              <Button type="submit" disabled={formSubmitting}>
+                {formSubmitting ? 'Đang lưu...' : editingMember ? 'Lưu thay đổi' : 'Thêm ngay'}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
 
       {/* Mobile Full-Screen Invite QR Bottom Sheet */}
-      {qrSheetOpen && (
-        <dialog
-          open
-          aria-modal="true"
-          aria-labelledby="invite-qr-sheet-title"
-          className="fixed inset-0 z-50 m-0 flex h-full w-full max-w-none items-end justify-center bg-black/60 p-0 lg:hidden"
-        >
-          <div className="w-full max-w-lg rounded-t-block border border-border bg-card p-6 shadow-block">
-            <div className="flex items-center justify-between">
-              <div>
-                <h2 id="invite-qr-sheet-title" className="text-base font-bold text-card-foreground">
-                  Quét QR Tham Gia {club.name}
-                </h2>
-                <p className="text-xs text-muted-foreground">
-                  Mã mời:{' '}
-                  <span className="font-mono font-bold text-primary">{club.inviteCode}</span>
-                </p>
-              </div>
-              <button
-                type="button"
-                onClick={() => setQrSheetOpen(false)}
-                className="inline-flex min-h-[40px] cursor-pointer items-center rounded-tile px-3 text-xs font-semibold text-muted-foreground"
-              >
-                Đóng ✕
-              </button>
-            </div>
+      <Sheet open={qrSheetOpen} onOpenChange={setQrSheetOpen}>
+        <SheetContent side="bottom" className="lg:hidden">
+          <SheetHeader>
+            <SheetTitle>Quét QR Tham Gia {club.name}</SheetTitle>
+            <SheetDescription>
+              Mã mời: <span className="font-mono font-bold text-primary">{club.inviteCode}</span>
+            </SheetDescription>
+          </SheetHeader>
 
-            <div className="mt-5 flex flex-col items-center rounded-tile bg-secondary/60 p-5">
-              <QrCodeSvg value={inviteJoinUrl} size={220} label={`Mã QR tham gia ${club.name}`} />
-              <p className="mt-3 break-all text-center font-mono text-xs text-muted-foreground">
-                {inviteJoinUrl}
-              </p>
-            </div>
-
-            <div className="mt-5 grid grid-cols-2 gap-3">
-              <button
-                type="button"
-                onClick={handleCopyInviteLink}
-                className="inline-flex min-h-[44px] cursor-pointer items-center justify-center rounded-tile border border-border-strong bg-secondary px-4 py-2.5 text-xs font-semibold text-foreground"
-              >
-                {copiedInvite ? 'Đã chép link!' : 'Sao chép link'}
-              </button>
-              <button
-                type="button"
-                onClick={handleShareInviteLink}
-                className="inline-flex min-h-[44px] cursor-pointer items-center justify-center rounded-tile bg-primary px-4 py-2.5 text-xs font-semibold text-on-primary shadow-cta"
-              >
-                Chia sẻ Zalo
-              </button>
-            </div>
+          <div className="mt-5 flex flex-col items-center rounded-tile bg-secondary/60 p-5">
+            <QrCodeSvg value={inviteJoinUrl} size={220} label={`Mã QR tham gia ${club.name}`} />
+            <p className="mt-3 break-all text-center font-mono text-xs text-muted-foreground">
+              {inviteJoinUrl}
+            </p>
           </div>
-        </dialog>
-      )}
+
+          <div className="mt-5 grid grid-cols-2 gap-3">
+            <Button
+              variant="outline"
+              onClick={handleCopyInviteLink}
+              className="border-border-strong bg-secondary"
+            >
+              {copiedInvite ? 'Đã chép link!' : 'Sao chép link'}
+            </Button>
+            <Button onClick={handleShareInviteLink}>Chia sẻ Zalo</Button>
+          </div>
+        </SheetContent>
+      </Sheet>
     </div>
   );
 }
