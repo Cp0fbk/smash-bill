@@ -1,157 +1,257 @@
 'use client';
 
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Badge, type BadgeProps } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { cn } from '@/lib/utils';
-import { formatVnd } from '@smash-bill/shared';
-import { Check } from 'lucide-react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Skeleton } from '@/components/ui/skeleton';
+import { type ClubRole, type ClubSummary, formatVnd } from '@smash-bill/shared';
+import { Calendar, Plus, ShoppingBag, Users } from 'lucide-react';
 import Link from 'next/link';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { fetchMyClubs } from '../../lib/api-client';
+import { useCurrentUser } from '../../lib/auth-context';
 
-interface CourtPlayer {
-  id: string;
-  name: string;
-  roleLabel: string;
-  present: boolean;
+function getRoleBadge(role: ClubRole): {
+  label: string;
+  variant: NonNullable<BadgeProps['variant']>;
+} {
+  switch (role) {
+    case 'HOST':
+      return { label: 'Chủ CLB', variant: 'soft' };
+    case 'MEMBER':
+      return { label: 'Thành viên', variant: 'success' };
+    case 'GUEST':
+      return { label: 'Khách', variant: 'warning' };
+  }
 }
 
-const INITIAL_PLAYERS: CourtPlayer[] = [
-  { id: 'p1', name: 'Nguyễn Quang Minh', roleLabel: 'Chủ sân / Host', present: true },
-  { id: 'p2', name: 'Lê Hoàng', roleLabel: 'Cố định (CLB)', present: true },
-  { id: 'p3', name: 'Phạm Thảo', roleLabel: 'Cố định (CLB)', present: true },
-  { id: 'p4', name: 'Trần Khánh', roleLabel: 'Khách giao lưu', present: true },
-  { id: 'p5', name: 'Vũ Đức', roleLabel: 'Cố định (CLB)', present: false },
-];
-
-const SESSION_COST_VND = 265_000;
-
 export default function HomePage() {
-  const [players, setPlayers] = useState<CourtPlayer[]>(INITIAL_PLAYERS);
-  const [copiedLink, setCopiedLink] = useState(false);
+  const { user, loading: authLoading } = useCurrentUser();
+  const [clubs, setClubs] = useState<ClubSummary[]>([]);
+  const [loadingClubs, setLoadingClubs] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const presentCount = players.filter((p) => p.present).length;
-  const perPlayerShare =
-    presentCount > 0 ? Math.ceil(SESSION_COST_VND / presentCount / 1000) * 1000 : 0;
-  const clubFundSurplus = Math.max(0, perPlayerShare * presentCount - SESSION_COST_VND);
-
-  function toggleAttendance(id: string) {
-    setPlayers((prev) => prev.map((p) => (p.id === id ? { ...p, present: !p.present } : p)));
-  }
-
-  async function copyPayLink() {
-    try {
-      const origin = typeof window !== 'undefined' ? window.location.origin : '';
-      await navigator.clipboard.writeText(`${origin}/pay/saomai-t5`);
-      setCopiedLink(true);
-      setTimeout(() => setCopiedLink(false), 1600);
-    } catch {
-      // Ignore clipboard error
+  useEffect(() => {
+    if (authLoading) {
+      return;
     }
-  }
+    if (!user) {
+      setClubs([]);
+      setError(null);
+      setLoadingClubs(false);
+      return;
+    }
+
+    let active = true;
+    setLoadingClubs(true);
+    fetchMyClubs()
+      .then((items) => {
+        if (active) {
+          setClubs(items);
+          setError(null);
+        }
+      })
+      .catch((err: unknown) => {
+        if (active) {
+          setError(
+            err instanceof Error ? err.message : 'Không thể tải dữ liệu CLB. Vui lòng thử lại.',
+          );
+        }
+      })
+      .finally(() => {
+        if (active) {
+          setLoadingClubs(false);
+        }
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [authLoading, user]);
 
   return (
-    <div className="mx-auto max-w-3xl space-y-5">
-      {/* 3 Compact KPI Cards */}
-      <Card aria-label="Tổng quan chi phí buổi đánh">
-        <CardContent className="grid grid-cols-3 gap-3 p-4 sm:p-5">
-          <div className="rounded-tile bg-secondary/70 p-3">
-            <p className="text-xs font-medium text-muted-foreground">Tổng chi phí</p>
-            <p className="mt-1 font-mono text-base font-bold text-card-foreground tabular-nums sm:text-lg">
-              {formatVnd(SESSION_COST_VND)}
+    <div className="space-y-6">
+      {/* Welcome / Role-Aware Header */}
+      <Card>
+        <CardContent className="flex flex-col justify-between gap-4 p-5 sm:flex-row sm:items-center sm:p-6">
+          <div>
+            <Badge variant="soft">Tổng quan SmashBill</Badge>
+            <h1 className="mt-2 text-xl font-bold tracking-tight text-card-foreground sm:text-2xl">
+              {user ? `Xin chào, ${user.name}` : 'Chào mừng đến với SmashBill'}
+            </h1>
+            <p className="mt-1 text-xs text-muted-foreground sm:text-sm">
+              Quản lý câu lạc bộ cố định, thành viên QR và tài khoản nhận tiền VietQR.
             </p>
           </div>
 
-          <div className="rounded-tile bg-primary-soft p-3">
-            <p className="text-xs font-medium text-primary">Mỗi người</p>
-            <p className="mt-1 font-mono text-base font-bold text-primary tabular-nums sm:text-lg">
-              {formatVnd(perPlayerShare)}
-            </p>
-          </div>
-
-          <div className="rounded-tile bg-success-soft p-3">
-            <p className="text-xs font-medium text-on-success-soft">Dư quỹ CLB</p>
-            <p className="mt-1 font-mono text-base font-bold text-success tabular-nums sm:text-lg">
-              +{formatVnd(clubFundSurplus)}
-            </p>
+          <div className="flex flex-wrap items-center gap-2.5">
+            <Button asChild variant="secondary">
+              <Link href="/matches">
+                <Calendar aria-hidden="true" />
+                <span>Kèo giao lưu</span>
+              </Link>
+            </Button>
+            <Button asChild>
+              <Link href="/clubs/new">
+                <Plus aria-hidden="true" />
+                <span>Tạo CLB mới</span>
+              </Link>
+            </Button>
           </div>
         </CardContent>
       </Card>
 
-      {/* 1-Touch Attendance List */}
-      <Card aria-labelledby="attendance-heading">
-        <CardHeader className="flex-row items-center justify-between space-y-0 pb-4">
-          <CardTitle id="attendance-heading">
-            Điểm danh buổi đánh ({presentCount}/{players.length})
-          </CardTitle>
-          <span className="text-xs text-muted-foreground">Chạm để điểm danh</span>
-        </CardHeader>
+      {error && (
+        <Alert variant="destructive">
+          <AlertDescription className="font-semibold">{error}</AlertDescription>
+        </Alert>
+      )}
 
-        <CardContent>
-          <ul className="space-y-2">
-            {players.map((player) => {
-              const share = player.present ? perPlayerShare : 0;
+      {/* Real Clubs Overview */}
+      {authLoading || loadingClubs ? (
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+          <Skeleton className="h-40 rounded-block border border-border" />
+          <Skeleton className="h-40 rounded-block border border-border" />
+        </div>
+      ) : !user ? (
+        <Card className="border-dashed text-center">
+          <CardContent className="p-8">
+            <p className="text-sm font-bold text-card-foreground">Bạn chưa đăng nhập</p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Đăng nhập bằng Google để tạo CLB và quản lý danh sách thành viên.
+            </p>
+            <Button asChild className="mt-4">
+              <a href="/login?reauth=1">Đăng nhập Google</a>
+            </Button>
+          </CardContent>
+        </Card>
+      ) : clubs.length === 0 ? (
+        <Card className="border-dashed text-center">
+          <CardContent className="p-8">
+            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-primary-soft text-primary">
+              <Users className="h-6 w-6" aria-hidden="true" />
+            </div>
+            <h2 className="mt-4 text-base font-bold text-card-foreground">
+              Bạn chưa có câu lạc bộ nào
+            </h2>
+            <p className="mx-auto mt-1 max-w-md text-xs text-muted-foreground">
+              Khởi tạo CLB đầu tiên để tạo mã QR mời thành viên và cấu hình VietQR nhận tiền sân.
+            </p>
+            <Button asChild className="mt-5">
+              <Link href="/clubs/new">
+                <Plus aria-hidden="true" />
+                <span>Tạo CLB đầu tiên</span>
+              </Link>
+            </Button>
+          </CardContent>
+        </Card>
+      ) : (
+        <section aria-label="Câu lạc bộ của bạn" className="space-y-3">
+          <div className="flex items-center justify-between">
+            <h2 className="text-sm font-bold text-card-foreground">
+              Câu lạc bộ của bạn ({clubs.length})
+            </h2>
+            <Button asChild variant="link" size="sm">
+              <Link href="/clubs">Xem tất cả →</Link>
+            </Button>
+          </div>
 
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+            {clubs.map((club) => {
+              const badge = getRoleBadge(club.myRole);
               return (
-                <li key={player.id}>
-                  <button
-                    type="button"
-                    role="switch"
-                    aria-checked={player.present}
-                    onClick={() => toggleAttendance(player.id)}
-                    className={cn(
-                      'flex min-h-[52px] w-full cursor-pointer items-center justify-between rounded-tile border px-3.5 py-2.5 text-left transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring [touch-action:manipulation]',
-                      player.present
-                        ? 'border-border bg-card hover:bg-secondary/50'
-                        : 'border-border bg-secondary/50 opacity-70',
-                    )}
-                  >
-                    <div className="flex items-center gap-3">
-                      <span
-                        aria-hidden="true"
-                        className={cn(
-                          'flex h-5 w-5 items-center justify-center rounded-md',
-                          player.present
-                            ? 'bg-success text-on-success'
-                            : 'border border-border bg-card text-transparent',
-                        )}
-                      >
-                        <Check className="h-3.5 w-3.5 stroke-[3]" aria-hidden="true" />
+                <Card key={club.id}>
+                  <CardHeader className="pb-3">
+                    <div className="flex items-center justify-between gap-2">
+                      <Badge variant={badge.variant}>{badge.label}</Badge>
+                      <span className="font-mono text-xs text-muted-foreground">
+                        {club.memberCount} thành viên
                       </span>
-                      <div>
-                        <p
-                          className={cn(
-                            'text-sm font-semibold',
-                            player.present
-                              ? 'text-card-foreground'
-                              : 'text-muted-foreground line-through',
-                          )}
-                        >
-                          {player.name}
-                        </p>
-                        <p className="text-xs text-muted-foreground">{player.roleLabel}</p>
-                      </div>
+                    </div>
+                    <CardTitle className="mt-2">{club.name}</CardTitle>
+                    <CardDescription className="line-clamp-1 text-xs">
+                      {club.location || 'Chưa cập nhật địa điểm sân'}
+                    </CardDescription>
+                  </CardHeader>
+
+                  <CardContent className="space-y-3">
+                    <div className="flex items-center justify-between rounded-tile bg-secondary/60 px-3 py-2 text-xs">
+                      <span className="text-muted-foreground">Giá sân mặc định</span>
+                      <span className="font-mono font-bold text-primary tabular-nums">
+                        {formatVnd(club.defaultCourtFee)}
+                      </span>
                     </div>
 
-                    <span className="font-mono text-sm font-bold text-primary tabular-nums">
-                      {formatVnd(share)}
-                    </span>
-                  </button>
-                </li>
+                    <div className="flex items-center gap-2">
+                      <Button asChild variant="secondary" size="sm" className="flex-1">
+                        <Link href={`/clubs/${club.id}`}>Chi tiết</Link>
+                      </Button>
+                      <Button asChild variant="soft" size="sm" className="flex-1">
+                        <Link href={`/clubs/${club.id}/members`}>Thành viên &amp; QR</Link>
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
               );
             })}
-          </ul>
-        </CardContent>
+          </div>
+        </section>
+      )}
 
-        <CardFooter className="flex-col gap-2.5 sm:flex-row">
-          <Button asChild className="w-full flex-1">
-            <Link href="/pay/saomai-t5">Xem bill &amp; Mã VietQR thu tiền</Link>
-          </Button>
+      {/* Quick Navigation Pillars */}
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-2 text-sm">
+              <Users className="h-4 w-4 text-primary" aria-hidden="true" />
+              <span>CLB &amp; Thành viên QR</span>
+            </CardTitle>
+            <CardDescription className="text-xs">
+              Quản lý danh sách hội viên và chia sẻ mã QR tự ghi danh.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button asChild variant="outline" size="sm" className="w-full">
+              <Link href="/clubs">Mở danh sách CLB</Link>
+            </Button>
+          </CardContent>
+        </Card>
 
-          <Button variant="secondary" onClick={copyPayLink} className="w-full sm:w-auto">
-            {copiedLink ? 'Đã chép link /pay' : 'Chép link gửi Zalo'}
-          </Button>
-        </CardFooter>
-      </Card>
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-2 text-sm">
+              <Calendar className="h-4 w-4 text-primary" aria-hidden="true" />
+              <span>Kèo giao lưu</span>
+            </CardTitle>
+            <CardDescription className="text-xs">
+              Tìm buổi đánh vãng lai phù hợp trình độ và khu vực.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button asChild variant="outline" size="sm" className="w-full">
+              <Link href="/matches">Xem kèo giao lưu</Link>
+            </Button>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-2 text-sm">
+              <ShoppingBag className="h-4 w-4 text-primary" aria-hidden="true" />
+              <span>Chợ vợt &amp; Phụ kiện</span>
+            </CardTitle>
+            <CardDescription className="text-xs">
+              Trao đổi vợt, giày cầu lông trong cộng đồng xác thực SSO.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Button asChild variant="outline" size="sm" className="w-full">
+              <Link href="/market">Khám phá Chợ vợt</Link>
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }
