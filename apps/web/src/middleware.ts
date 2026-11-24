@@ -1,6 +1,7 @@
 import { type NextRequest, NextResponse } from 'next/server';
 
-const ACCESS_COOKIE_NAME = 'sb_access';
+const SESSION_COOKIE_NAME = 'sb_session';
+const LEGACY_ACCESS_COOKIE_NAME = 'sb_access';
 const PUBLIC_PATHS = ['/login', '/manifest.webmanifest', '/favicon.ico', '/logo.jpg'];
 const STATIC_ASSET_REGEX = /\.(?:svg|png|jpg|jpeg|gif|webp|ico|woff2?|ttf)$/i;
 
@@ -24,17 +25,18 @@ function isPublicRoute(pathname: string): boolean {
 
 export function middleware(request: NextRequest) {
   const { pathname, searchParams } = request.nextUrl;
-  const hasAccessCookie = Boolean(request.cookies.get(ACCESS_COOKIE_NAME)?.value);
+  const hasSessionCookie = Boolean(request.cookies.get(SESSION_COOKIE_NAME)?.value);
 
   if (pathname === '/login') {
     const response = NextResponse.next();
     if (searchParams.has('reauth') || searchParams.has('error')) {
-      response.cookies.delete(ACCESS_COOKIE_NAME);
+      response.cookies.delete(SESSION_COOKIE_NAME);
+      response.cookies.delete(LEGACY_ACCESS_COOKIE_NAME);
     }
     return response;
   }
 
-  if (!isPublicRoute(pathname) && !hasAccessCookie) {
+  if (!isPublicRoute(pathname) && !hasSessionCookie) {
     const loginUrl = new URL('/login', request.url);
     if (pathname !== '/') {
       loginUrl.searchParams.set('next', pathname);

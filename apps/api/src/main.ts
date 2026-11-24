@@ -36,6 +36,7 @@ async function bootstrap() {
         'Badminton Club Attendance, Cost Splitting & Dynamic VietQR Billing Micro-SaaS API',
       )
       .setVersion('0.1.0')
+      .addBearerAuth()
       .build();
     const document = SwaggerModule.createDocument(app, swaggerConfig);
     SwaggerModule.setup('api/docs', app, document);

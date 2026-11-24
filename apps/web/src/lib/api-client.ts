@@ -18,6 +18,8 @@ import type {
 
 export const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api/v1';
 
+const REFRESH_LEEWAY_MS = 30_000;
+
 export class ApiClientError extends Error {
   readonly status: number;
   readonly code: string;
@@ -34,7 +36,22 @@ export class ApiClientError extends Error {
   }
 }
 
+// Keep the short-lived 15m access token strictly in JS module memory (never in localStorage or cookies).
+let inMemoryAccessToken: string | null = null;
+let accessTokenExpiresAtMs = 0;
 let activeRefreshPromise: Promise<boolean> | null = null;
+
+function setInMemoryAccessToken(token: string | null, expiresInSeconds?: number): void {
+  inMemoryAccessToken = token;
+  accessTokenExpiresAtMs =
+    token && typeof expiresInSeconds === 'number' && expiresInSeconds > 0
+      ? Date.now() + expiresInSeconds * 1000
+      : 0;
+}
+
+function hasUsableAccessToken(): boolean {
+  return Boolean(inMemoryAccessToken && Date.now() < accessTokenExpiresAtMs - REFRESH_LEEWAY_MS);
+}
 
 async function tryRefreshSession(): Promise<boolean> {
   if (activeRefreshPromise) {
@@ -47,14 +64,27 @@ async function tryRefreshSession(): Promise<boolean> {
         method: 'POST',
         credentials: 'include',
       });
+
       if (!response.ok) {
+        setInMemoryAccessToken(null);
         await fetch(`${API_BASE_URL}/auth/logout`, {
           method: 'POST',
           credentials: 'include',
         }).catch(() => undefined);
+        return false;
       }
-      return response.ok;
+
+      const data = (await response.json()) as { accessToken?: unknown; expiresIn?: unknown };
+      if (typeof data.accessToken !== 'string' || !data.accessToken) {
+        setInMemoryAccessToken(null);
+        return false;
+      }
+
+      const expiresIn = typeof data.expiresIn === 'number' ? data.expiresIn : 900;
+      setInMemoryAccessToken(data.accessToken, expiresIn);
+      return true;
     } catch {
+      setInMemoryAccessToken(null);
       return false;
     } finally {
       activeRefreshPromise = null;
@@ -72,9 +102,21 @@ export async function apiFetch<T>(
   const normalizedPath = path.startsWith('/') ? path : `/${path}`;
   const url = `${API_BASE_URL}${normalizedPath}`;
 
+  if (
+    allowRefresh &&
+    normalizedPath !== '/auth/refresh' &&
+    normalizedPath !== '/auth/logout' &&
+    !hasUsableAccessToken()
+  ) {
+    await tryRefreshSession();
+  }
+
   const headers = new Headers(init.headers);
   if (init.body && !headers.has('Content-Type')) {
     headers.set('Content-Type', 'application/json');
+  }
+  if (allowRefresh && inMemoryAccessToken && !headers.has('Authorization')) {
+    headers.set('Authorization', `Bearer ${inMemoryAccessToken}`);
   }
 
   const response = await fetch(url, {
@@ -89,6 +131,7 @@ export async function apiFetch<T>(
     normalizedPath !== '/auth/refresh' &&
     normalizedPath !== '/auth/logout'
   ) {
+    setInMemoryAccessToken(null);
     const refreshed = await tryRefreshSession();
     if (refreshed) {
       return apiFetch<T>(normalizedPath, init, false);
@@ -127,10 +170,17 @@ export function fetchCurrentUser(): Promise<AuthUserProfile> {
   return apiFetch<AuthUserProfile>('/me');
 }
 
-export function logoutUser(): Promise<{ status: string }> {
-  return apiFetch<{ status: string }>('/auth/logout', {
-    method: 'POST',
-  });
+export async function logoutUser(): Promise<{ status: string }> {
+  const token = inMemoryAccessToken;
+  setInMemoryAccessToken(null);
+  return apiFetch<{ status: string }>(
+    '/auth/logout',
+    {
+      method: 'POST',
+      headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+    },
+    false,
+  );
 }
 
 export function fetchMyClubs(): Promise<ClubSummary[]> {

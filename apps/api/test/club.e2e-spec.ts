@@ -67,7 +67,7 @@ describe('Club Management, Bank Account & Role Guard Matrix E2E', () => {
     const accessToken = tokenService.signAccessToken(user);
     return {
       user,
-      authCookie: `sb_access=${encodeURIComponent(accessToken)}`,
+      authHeader: `Bearer ${accessToken}`,
     };
   }
 
@@ -81,7 +81,7 @@ describe('Club Management, Bank Account & Role Guard Matrix E2E', () => {
     // 1. Create first club "CLB Sao Mai"
     const createRes1 = await request(app.getHttpServer())
       .post('/api/v1/clubs')
-      .set('Cookie', [admin.authCookie])
+      .set('Authorization', admin.authHeader)
       .send({
         name: 'CLB Sao Mai',
         description: 'CLB cầu lông tối 3-5-7',
@@ -104,7 +104,7 @@ describe('Club Management, Bank Account & Role Guard Matrix E2E', () => {
     // 2. Duplicate club name creates "clb-sao-mai-2"
     const createRes2 = await request(app.getHttpServer())
       .post('/api/v1/clubs')
-      .set('Cookie', [admin.authCookie])
+      .set('Authorization', admin.authHeader)
       .send({
         name: 'CLB Sao Mai',
         location: 'Quận Bình Thạnh',
@@ -116,7 +116,7 @@ describe('Club Management, Bank Account & Role Guard Matrix E2E', () => {
     // 3. GET /api/v1/clubs lists both clubs with myRole = ADMIN
     const listRes = await request(app.getHttpServer())
       .get('/api/v1/clubs')
-      .set('Cookie', [admin.authCookie])
+      .set('Authorization', admin.authHeader)
       .expect(200);
 
     expect(listRes.body).toHaveLength(2);
@@ -144,7 +144,7 @@ describe('Club Management, Bank Account & Role Guard Matrix E2E', () => {
 
     const clubRes = await request(app.getHttpServer())
       .post('/api/v1/clubs')
-      .set('Cookie', [admin.authCookie])
+      .set('Authorization', admin.authHeader)
       .send({
         name: 'Sao Mai Pro',
         defaultCourtFee: 200000,
@@ -167,20 +167,20 @@ describe('Club Management, Bank Account & Role Guard Matrix E2E', () => {
     // Non-member accessing GET /clubs/:clubId -> 404 (do not leak existence)
     await request(app.getHttpServer())
       .get(`/api/v1/clubs/${clubId}`)
-      .set('Cookie', [outsider.authCookie])
+      .set('Authorization', outsider.authHeader)
       .expect(404);
 
     // Non-member accessing PATCH /clubs/:clubId -> 404
     await request(app.getHttpServer())
       .patch(`/api/v1/clubs/${clubId}`)
-      .set('Cookie', [outsider.authCookie])
+      .set('Authorization', outsider.authHeader)
       .send({ name: 'Hacked Name' })
       .expect(404);
 
     // MEMBER accessing GET /clubs/:clubId -> 200 with myRole = MEMBER
     const memberGetRes = await request(app.getHttpServer())
       .get(`/api/v1/clubs/${clubId}`)
-      .set('Cookie', [member.authCookie])
+      .set('Authorization', member.authHeader)
       .expect(200);
 
     expect(memberGetRes.body).toMatchObject({
@@ -192,14 +192,14 @@ describe('Club Management, Bank Account & Role Guard Matrix E2E', () => {
     // MEMBER calling PATCH /clubs/:clubId -> 403
     await request(app.getHttpServer())
       .patch(`/api/v1/clubs/${clubId}`)
-      .set('Cookie', [member.authCookie])
+      .set('Authorization', member.authHeader)
       .send({ name: 'Member Edit Attempt' })
       .expect(403);
 
     // MEMBER calling PUT /clubs/:clubId/bank-account -> 403
     await request(app.getHttpServer())
       .put(`/api/v1/clubs/${clubId}/bank-account`)
-      .set('Cookie', [member.authCookie])
+      .set('Authorization', member.authHeader)
       .send({
         bankBin: '970436',
         bankAccountNo: '0071001234567',
@@ -210,13 +210,13 @@ describe('Club Management, Bank Account & Role Guard Matrix E2E', () => {
     // MEMBER calling POST /clubs/:clubId/tokens/rotate -> 403
     await request(app.getHttpServer())
       .post(`/api/v1/clubs/${clubId}/tokens/rotate`)
-      .set('Cookie', [member.authCookie])
+      .set('Authorization', member.authHeader)
       .expect(403);
 
     // ADMIN updates club info -> 200
     const patchRes = await request(app.getHttpServer())
       .patch(`/api/v1/clubs/${clubId}`)
-      .set('Cookie', [admin.authCookie])
+      .set('Authorization', admin.authHeader)
       .send({
         name: 'CLB Sao Mai Premier',
         location: 'Sân Phú Nhuận',
@@ -234,7 +234,7 @@ describe('Club Management, Bank Account & Role Guard Matrix E2E', () => {
     // ADMIN rejects invalid bank BIN -> 400
     await request(app.getHttpServer())
       .put(`/api/v1/clubs/${clubId}/bank-account`)
-      .set('Cookie', [admin.authCookie])
+      .set('Authorization', admin.authHeader)
       .send({
         bankBin: '999999',
         bankAccountNo: '0071001234567',
@@ -245,7 +245,7 @@ describe('Club Management, Bank Account & Role Guard Matrix E2E', () => {
     // ADMIN saves valid bank info -> normalizes bankAccountName to uppercase ASCII
     const bankRes = await request(app.getHttpServer())
       .put(`/api/v1/clubs/${clubId}/bank-account`)
-      .set('Cookie', [admin.authCookie])
+      .set('Authorization', admin.authHeader)
       .send({
         bankBin: '970436',
         bankAccountNo: '0071001234567',
@@ -263,7 +263,7 @@ describe('Club Management, Bank Account & Role Guard Matrix E2E', () => {
     // ADMIN rotates tokens -> 200 with new inviteCode and publicToken
     const rotateRes = await request(app.getHttpServer())
       .post(`/api/v1/clubs/${clubId}/tokens/rotate`)
-      .set('Cookie', [admin.authCookie])
+      .set('Authorization', admin.authHeader)
       .send({ rotateInviteCode: true, rotatePublicToken: true })
       .expect(200);
 
@@ -285,7 +285,7 @@ describe('Club Management, Bank Account & Role Guard Matrix E2E', () => {
 
     const clubRes = await request(app.getHttpServer())
       .post('/api/v1/clubs')
-      .set('Cookie', [host.authCookie])
+      .set('Authorization', host.authHeader)
       .send({
         name: 'CLB Cầu Lông Sao Mai',
         location: 'Sân Sao Mai, Phú Nhuận',
@@ -311,7 +311,7 @@ describe('Club Management, Bank Account & Role Guard Matrix E2E', () => {
     // 1. HOST adds a member with formatted phone -> phone normalized to 0912345678
     const addRes1 = await request(app.getHttpServer())
       .post(`/api/v1/clubs/${clubId}/members`)
-      .set('Cookie', [host.authCookie])
+      .set('Authorization', host.authHeader)
       .send({
         displayName: 'Phạm Văn Mình',
         phone: '0912 345 678',
@@ -330,7 +330,7 @@ describe('Club Management, Bank Account & Role Guard Matrix E2E', () => {
     // 2. Duplicate phone detection on POST /clubs/:clubId/members (+84 format) -> returns existing
     const addDuplicateRes = await request(app.getHttpServer())
       .post(`/api/v1/clubs/${clubId}/members`)
-      .set('Cookie', [host.authCookie])
+      .set('Authorization', host.authHeader)
       .send({
         displayName: 'Phạm Văn Mình 2',
         phone: '+84 912-345-678',
@@ -343,7 +343,7 @@ describe('Club Management, Bank Account & Role Guard Matrix E2E', () => {
     const searchRes = await request(app.getHttpServer())
       .get(`/api/v1/clubs/${clubId}/members`)
       .query({ q: 'minh' })
-      .set('Cookie', [memberUser.authCookie])
+      .set('Authorization', memberUser.authHeader)
       .expect(200);
 
     expect(searchRes.body.map((m: { displayName: string }) => m.displayName)).toEqual(
@@ -354,32 +354,32 @@ describe('Club Management, Bank Account & Role Guard Matrix E2E', () => {
     // 4. MEMBER cannot POST/PATCH/DELETE roster members -> 403
     await request(app.getHttpServer())
       .post(`/api/v1/clubs/${clubId}/members`)
-      .set('Cookie', [memberUser.authCookie])
+      .set('Authorization', memberUser.authHeader)
       .send({ displayName: 'Unauthorized Add' })
       .expect(403);
 
     await request(app.getHttpServer())
       .patch(`/api/v1/clubs/${clubId}/members/${addRes1.body.id}`)
-      .set('Cookie', [memberUser.authCookie])
+      .set('Authorization', memberUser.authHeader)
       .send({ displayName: 'Unauthorized Edit' })
       .expect(403);
 
     await request(app.getHttpServer())
       .delete(`/api/v1/clubs/${clubId}/members/${addRes1.body.id}`)
-      .set('Cookie', [memberUser.authCookie])
+      .set('Authorization', memberUser.authHeader)
       .expect(403);
 
     // 5. Sole HOST cannot deactivate or demote themselves -> 400 LAST_HOST_REQUIRED
     const allMembersRes = await request(app.getHttpServer())
       .get(`/api/v1/clubs/${clubId}/members`)
-      .set('Cookie', [host.authCookie])
+      .set('Authorization', host.authHeader)
       .expect(200);
     const hostMember = allMembersRes.body.find((m: { role: string }) => m.role === 'HOST');
     expect(hostMember).toBeDefined();
 
     const lastHostDelRes = await request(app.getHttpServer())
       .delete(`/api/v1/clubs/${clubId}/members/${hostMember.id}`)
-      .set('Cookie', [host.authCookie])
+      .set('Authorization', host.authHeader)
       .expect(400);
     expect(lastHostDelRes.body.code).toBe('LAST_HOST_REQUIRED');
 
@@ -421,7 +421,7 @@ describe('Club Management, Bank Account & Role Guard Matrix E2E', () => {
     // 8. Deactivating member and re-joining via invite reactivates instead of duplicating
     await request(app.getHttpServer())
       .delete(`/api/v1/clubs/${clubId}/members/${selfJoinRes.body.member.id}`)
-      .set('Cookie', [host.authCookie])
+      .set('Authorization', host.authHeader)
       .expect(200);
 
     const rejoinRes = await request(app.getHttpServer())
@@ -468,7 +468,7 @@ describe('Club Management, Bank Account & Role Guard Matrix E2E', () => {
     // 10. Rotating invite code invalidates old inviteCode -> 404
     await request(app.getHttpServer())
       .post(`/api/v1/clubs/${clubId}/tokens/rotate`)
-      .set('Cookie', [host.authCookie])
+      .set('Authorization', host.authHeader)
       .send({ rotateInviteCode: true, rotatePublicToken: false })
       .expect(200);
 

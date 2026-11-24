@@ -1,7 +1,8 @@
 import type { CookieOptions, Request, Response } from 'express';
-import { ACCESS_TOKEN_TTL_SECONDS, OAUTH_STATE_TTL_SECONDS } from '../token.service';
+import { OAUTH_STATE_TTL_SECONDS } from '../token.service';
 
-export const ACCESS_COOKIE_NAME = 'sb_access';
+export const LEGACY_ACCESS_COOKIE_NAME = 'sb_access';
+export const SESSION_COOKIE_NAME = 'sb_session';
 export const REFRESH_COOKIE_NAME = 'sb_refresh';
 export const OAUTH_COOKIE_NAME = 'sb_oauth';
 export const AUTH_COOKIE_PATH = '/api/v1/auth';
@@ -57,23 +58,30 @@ export function clearOAuthStateCookie(res: Response, isProd: boolean): void {
   res.clearCookie(OAUTH_COOKIE_NAME, baseCookieOptions(isProd, AUTH_COOKIE_PATH));
 }
 
-export function setSessionCookies(
+export function setRefreshSessionCookies(
   res: Response,
-  tokens: { accessToken: string; refreshToken: string; refreshMaxAgeMs: number },
+  tokens: { refreshToken: string; refreshMaxAgeMs: number },
   isProd: boolean,
 ): void {
-  res.cookie(ACCESS_COOKIE_NAME, tokens.accessToken, {
-    ...baseCookieOptions(isProd, '/'),
-    maxAge: tokens.refreshMaxAgeMs,
-  });
-
+  // Store only the rotating refresh token in an HttpOnly cookie scoped to /api/v1/auth,
+  // plus a non-secret HttpOnly session indicator cookie so Next.js middleware can gate routes.
+  // The short-lived 15m JWT access token is kept strictly in JS memory (Bearer header).
   res.cookie(REFRESH_COOKIE_NAME, tokens.refreshToken, {
     ...baseCookieOptions(isProd, AUTH_COOKIE_PATH),
     maxAge: tokens.refreshMaxAgeMs,
   });
+
+  res.cookie(SESSION_COOKIE_NAME, '1', {
+    ...baseCookieOptions(isProd, '/'),
+    maxAge: tokens.refreshMaxAgeMs,
+  });
+
+  // Clean up any legacy sb_access cookie from earlier sessions.
+  res.clearCookie(LEGACY_ACCESS_COOKIE_NAME, baseCookieOptions(isProd, '/'));
 }
 
 export function clearSessionCookies(res: Response, isProd: boolean): void {
-  res.clearCookie(ACCESS_COOKIE_NAME, baseCookieOptions(isProd, '/'));
   res.clearCookie(REFRESH_COOKIE_NAME, baseCookieOptions(isProd, AUTH_COOKIE_PATH));
+  res.clearCookie(SESSION_COOKIE_NAME, baseCookieOptions(isProd, '/'));
+  res.clearCookie(LEGACY_ACCESS_COOKIE_NAME, baseCookieOptions(isProd, '/'));
 }

@@ -121,7 +121,7 @@ describe('Auth SSO, Rotating Refresh Tokens & /me E2E', () => {
       .set('Cookie', [`sb_oauth=${encodeURIComponent(oauthCookie)}`])
       .expect(400);
 
-    // 3. Valid callback exchanges code, sets sb_access + sb_refresh cookies, redirects to WEB_APP_URL
+    // 3. Valid callback exchanges code, sets HttpOnly sb_refresh + sb_session cookies (no sb_access), redirects to WEB_APP_URL
     const callbackRes = await request(app.getHttpServer())
       .get('/api/v1/auth/google/callback')
       .query({ code: 'fake-code-123', state })
@@ -131,14 +131,30 @@ describe('Auth SSO, Rotating Refresh Tokens & /me E2E', () => {
     expect(callbackRes.headers.location).toBe('http://localhost:3000');
 
     const accessCookie1 = extractCookieValue(callbackRes.headers['set-cookie'], 'sb_access');
+    const sessionCookie1 = extractCookieValue(callbackRes.headers['set-cookie'], 'sb_session');
     const refreshCookie1 = extractCookieValue(callbackRes.headers['set-cookie'], 'sb_refresh');
-    expect(accessCookie1).toBeTruthy();
+    expect(accessCookie1).toBe('');
+    expect(sessionCookie1).toBe('1');
     expect(refreshCookie1).toBeTruthy();
 
-    // 4. GET /api/v1/me returns 200 with authenticated user profile
+    // 4. POST /api/v1/auth/refresh exchanges sb_refresh cookie for an in-memory Bearer accessToken
+    const refreshRes1 = await request(app.getHttpServer())
+      .post('/api/v1/auth/refresh')
+      .set('Cookie', [`sb_refresh=${encodeURIComponent(refreshCookie1)}`])
+      .expect(200);
+
+    const accessToken1 = refreshRes1.body.accessToken as string;
+    const refreshCookie2 = extractCookieValue(refreshRes1.headers['set-cookie'], 'sb_refresh');
+    expect(accessToken1).toBeTruthy();
+    expect(refreshRes1.body.expiresIn).toBe(900);
+    expect(extractCookieValue(refreshRes1.headers['set-cookie'], 'sb_access')).toBe('');
+    expect(refreshCookie2).toBeTruthy();
+    expect(refreshCookie2).not.toBe(refreshCookie1);
+
+    // 5. GET /api/v1/me returns 200 with Authorization: Bearer <accessToken>
     const meRes = await request(app.getHttpServer())
       .get('/api/v1/me')
-      .set('Cookie', [`sb_access=${encodeURIComponent(accessCookie1)}`])
+      .set('Authorization', `Bearer ${accessToken1}`)
       .expect(200);
 
     expect(meRes.body).toMatchObject({
@@ -151,25 +167,23 @@ describe('Auth SSO, Rotating Refresh Tokens & /me E2E', () => {
       status: 'ACTIVE',
     });
 
-    // 5. POST /api/v1/auth/refresh rotates refresh token and issues new cookies
-    const refreshRes = await request(app.getHttpServer())
+    // 6. POST /api/v1/auth/refresh rotates refresh token again and returns a fresh Bearer token
+    const refreshRes2 = await request(app.getHttpServer())
       .post('/api/v1/auth/refresh')
-      .set('Cookie', [`sb_refresh=${encodeURIComponent(refreshCookie1)}`])
+      .set('Cookie', [`sb_refresh=${encodeURIComponent(refreshCookie2)}`])
       .expect(200);
 
-    const accessCookie2 = extractCookieValue(refreshRes.headers['set-cookie'], 'sb_access');
-    const refreshCookie2 = extractCookieValue(refreshRes.headers['set-cookie'], 'sb_refresh');
-    expect(accessCookie2).toBeTruthy();
-    expect(refreshCookie2).toBeTruthy();
-    expect(refreshCookie2).not.toBe(refreshCookie1);
+    const accessToken2 = refreshRes2.body.accessToken as string;
+    const refreshCookie3 = extractCookieValue(refreshRes2.headers['set-cookie'], 'sb_refresh');
+    expect(accessToken2).toBeTruthy();
+    expect(refreshCookie3).toBeTruthy();
+    expect(refreshCookie3).not.toBe(refreshCookie2);
 
-    // 6. POST /api/v1/auth/logout invalidates refresh token server-side
+    // 7. POST /api/v1/auth/logout invalidates refresh token server-side
     await request(app.getHttpServer())
       .post('/api/v1/auth/logout')
-      .set('Cookie', [
-        `sb_access=${encodeURIComponent(accessCookie2)}`,
-        `sb_refresh=${encodeURIComponent(refreshCookie2)}`,
-      ])
+      .set('Authorization', `Bearer ${accessToken2}`)
+      .set('Cookie', [`sb_refresh=${encodeURIComponent(refreshCookie3)}`])
       .expect(200);
 
     const activeTokens = await db.prisma.refreshToken.count({
@@ -180,7 +194,7 @@ describe('Auth SSO, Rotating Refresh Tokens & /me E2E', () => {
     // Refreshing with the logged-out token fails with 401
     await request(app.getHttpServer())
       .post('/api/v1/auth/refresh')
-      .set('Cookie', [`sb_refresh=${encodeURIComponent(refreshCookie2)}`])
+      .set('Cookie', [`sb_refresh=${encodeURIComponent(refreshCookie3)}`])
       .expect(401);
   });
 

@@ -14,16 +14,25 @@ import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import type { Request, Response } from 'express';
 import { AuthService } from './auth.service';
 import { Public } from './decorators/public.decorator';
+import { ACCESS_TOKEN_TTL_SECONDS } from './token.service';
 import {
-  ACCESS_COOKIE_NAME,
   OAUTH_COOKIE_NAME,
   REFRESH_COOKIE_NAME,
   clearOAuthStateCookie,
   clearSessionCookies,
   getCookie,
   setOAuthStateCookie,
-  setSessionCookies,
+  setRefreshSessionCookies,
 } from './utils/cookies';
+
+function extractBearerToken(req: Request): string | undefined {
+  const authHeader = req.headers.authorization;
+  if (typeof authHeader === 'string' && authHeader.startsWith('Bearer ')) {
+    const token = authHeader.slice('Bearer '.length).trim();
+    return token || undefined;
+  }
+  return undefined;
+}
 
 @ApiTags('auth')
 @Controller('auth')
@@ -58,7 +67,8 @@ export class AuthController {
   @Public()
   @Get(':provider/callback')
   @ApiOperation({
-    summary: 'Verify OAuth state, exchange code, upsert user, set cookies, and redirect to web app',
+    summary:
+      'Verify OAuth state, exchange code, upsert user, set HttpOnly refresh cookie, and redirect to web app',
   })
   async handleCallback(
     @Param('provider') provider: string,
@@ -87,10 +97,9 @@ export class AuthController {
       userAgent,
     });
 
-    setSessionCookies(
+    setRefreshSessionCookies(
       res,
       {
-        accessToken: session.accessToken,
         refreshToken: session.refreshToken,
         refreshMaxAgeMs: session.refreshMaxAgeMs,
       },
@@ -103,7 +112,9 @@ export class AuthController {
   @Public()
   @Post('refresh')
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Rotate access and refresh token cookies' })
+  @ApiOperation({
+    summary: 'Rotate HttpOnly refresh token cookie and mint a short-lived Bearer access token',
+  })
   async refresh(@Req() req: Request, @Res({ passthrough: true }) res: Response) {
     const rawRefreshToken = getCookie(req, REFRESH_COOKIE_NAME);
     const userAgent =
@@ -112,10 +123,9 @@ export class AuthController {
     try {
       const rotated = await this.authService.refreshSession(rawRefreshToken, userAgent);
 
-      setSessionCookies(
+      setRefreshSessionCookies(
         res,
         {
-          accessToken: rotated.accessToken,
           refreshToken: rotated.refreshToken,
           refreshMaxAgeMs: rotated.refreshMaxAgeMs,
         },
@@ -123,7 +133,8 @@ export class AuthController {
       );
 
       return {
-        status: 'ok',
+        accessToken: rotated.accessToken,
+        expiresIn: ACCESS_TOKEN_TTL_SECONDS,
       };
     } catch (error) {
       clearSessionCookies(res, this.isProd);
@@ -137,7 +148,7 @@ export class AuthController {
   @ApiOperation({ summary: 'Revoke refresh token server-side and clear session cookies' })
   async logout(@Req() req: Request, @Res({ passthrough: true }) res: Response) {
     const rawRefreshToken = getCookie(req, REFRESH_COOKIE_NAME);
-    const rawAccessToken = getCookie(req, ACCESS_COOKIE_NAME);
+    const rawAccessToken = extractBearerToken(req);
     const userId = this.authService.tryExtractUserId(rawAccessToken);
 
     try {

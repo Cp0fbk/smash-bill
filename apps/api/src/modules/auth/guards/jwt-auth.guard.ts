@@ -13,7 +13,6 @@ import type { AuthenticatedUser } from '../decorators/current-user.decorator';
 import { IS_PUBLIC_KEY } from '../decorators/public.decorator';
 import { TokenService } from '../token.service';
 import { isConfiguredPlatformAdminEmail } from '../utils/admin-email';
-import { ACCESS_COOKIE_NAME, getCookie } from '../utils/cookies';
 
 @Injectable()
 export class JwtAuthGuard implements CanActivate {
@@ -90,14 +89,10 @@ export class JwtAuthGuard implements CanActivate {
   }
 
   private extractToken(req: Request): string | undefined {
-    const cookieToken = getCookie(req, ACCESS_COOKIE_NAME);
-    if (cookieToken) {
-      return cookieToken;
-    }
-
     const authHeader = req.headers.authorization;
     if (typeof authHeader === 'string' && authHeader.startsWith('Bearer ')) {
-      return authHeader.slice('Bearer '.length).trim();
+      const token = authHeader.slice('Bearer '.length).trim();
+      return token || undefined;
     }
 
     return undefined;
